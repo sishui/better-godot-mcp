@@ -29,6 +29,7 @@ import { handleSignals } from './composite/signals.js'
 import { handleTilemap } from './composite/tilemap.js'
 import { handleUI } from './composite/ui.js'
 import { formatError, GodotMCPError } from './helpers/errors.js'
+import { wrapToolResult } from './helpers/security.js'
 
 // =============================================
 // P0 - Core Tools (8)
@@ -576,53 +577,72 @@ export function registerTools(server: Server, config: GodotConfig): void {
     const { name, arguments: args = {} } = request.params
 
     try {
+      let result: { content: Array<{ type: string; text: string }>; isError?: boolean }
       switch (name) {
         // P0 - Core
         case 'project':
-          return await handleProject(args.action as string, args as Record<string, unknown>, config)
+          result = await handleProject(args.action as string, args as Record<string, unknown>, config)
+          break
         case 'scenes':
-          return await handleScenes(args.action as string, args as Record<string, unknown>, config)
+          result = await handleScenes(args.action as string, args as Record<string, unknown>, config)
+          break
         case 'nodes':
-          return await handleNodes(args.action as string, args as Record<string, unknown>, config)
+          result = await handleNodes(args.action as string, args as Record<string, unknown>, config)
+          break
         case 'scripts':
-          return await handleScripts(args.action as string, args as Record<string, unknown>, config)
+          result = await handleScripts(args.action as string, args as Record<string, unknown>, config)
+          break
         case 'editor':
-          return await handleEditor(args.action as string, args as Record<string, unknown>, config)
+          result = await handleEditor(args.action as string, args as Record<string, unknown>, config)
+          break
         case 'setup':
-          return await handleSetup(args.action as string, args as Record<string, unknown>, config)
+          result = await handleSetup(args.action as string, args as Record<string, unknown>, config)
+          break
         case 'config':
-          return await handleConfig(args.action as string, args as Record<string, unknown>, config)
+          result = await handleConfig(args.action as string, args as Record<string, unknown>, config)
+          break
         case 'help':
-          return await handleHelp(
+          result = await handleHelp(
             (args.action as string) || (args.tool_name as string),
             args as Record<string, unknown>,
           )
+          break
 
         // P1 - Extended
         case 'resources':
-          return await handleResources(args.action as string, args as Record<string, unknown>, config)
+          result = await handleResources(args.action as string, args as Record<string, unknown>, config)
+          break
         case 'input_map':
-          return await handleInputMap(args.action as string, args as Record<string, unknown>, config)
+          result = await handleInputMap(args.action as string, args as Record<string, unknown>, config)
+          break
         case 'signals':
-          return await handleSignals(args.action as string, args as Record<string, unknown>, config)
+          result = await handleSignals(args.action as string, args as Record<string, unknown>, config)
+          break
 
         // P2 - Specialized
         case 'animation':
-          return await handleAnimation(args.action as string, args as Record<string, unknown>, config)
+          result = await handleAnimation(args.action as string, args as Record<string, unknown>, config)
+          break
         case 'tilemap':
-          return await handleTilemap(args.action as string, args as Record<string, unknown>, config)
+          result = await handleTilemap(args.action as string, args as Record<string, unknown>, config)
+          break
         case 'shader':
-          return await handleShader(args.action as string, args as Record<string, unknown>, config)
+          result = await handleShader(args.action as string, args as Record<string, unknown>, config)
+          break
         case 'physics':
-          return await handlePhysics(args.action as string, args as Record<string, unknown>, config)
+          result = await handlePhysics(args.action as string, args as Record<string, unknown>, config)
+          break
 
         // P3 - Advanced
         case 'audio':
-          return await handleAudio(args.action as string, args as Record<string, unknown>, config)
+          result = await handleAudio(args.action as string, args as Record<string, unknown>, config)
+          break
         case 'navigation':
-          return await handleNavigation(args.action as string, args as Record<string, unknown>, config)
+          result = await handleNavigation(args.action as string, args as Record<string, unknown>, config)
+          break
         case 'ui':
-          return await handleUI(args.action as string, args as Record<string, unknown>, config)
+          result = await handleUI(args.action as string, args as Record<string, unknown>, config)
+          break
 
         default:
           throw new GodotMCPError(
@@ -631,6 +651,7 @@ export function registerTools(server: Server, config: GodotConfig): void {
             `Available tools: ${TOOLS.map((t) => t.name).join(', ')}`,
           )
       }
+      return wrapToolResult(name, result)
     } catch (error) {
       return formatError(error)
     }
