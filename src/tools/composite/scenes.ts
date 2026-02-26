@@ -101,7 +101,7 @@ function generateTscnContent(rootName: string, rootType: string): string {
 }
 
 function validateSceneArgs(action: string, args: Record<string, unknown>, config: GodotConfig) {
-  const projectPath = (args.project_path as string) || config.projectPath
+  const projectPath = (args.project_path as string) || config.projectPath || undefined
   const scenePath = args.scene_path as string
   const newPath = args.new_path as string
 
