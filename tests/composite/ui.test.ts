@@ -2,8 +2,6 @@
  * Integration tests for UI tool
  */
 
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { GodotConfig } from '../../src/godot/types.js'
 import { handleUI } from '../../src/tools/composite/ui.js'
@@ -49,6 +47,12 @@ position = Vector2(100, 100)
 texture = ExtResource("1_xxxxx")
 `
 
+interface ControlInfo {
+  name: string
+  type: string
+  parent: string
+}
+
 describe('ui', () => {
   let projectPath: string
   let cleanup: () => void
@@ -83,7 +87,7 @@ describe('ui', () => {
       expect(data.count).toBe(5)
       expect(data.controls).toHaveLength(5)
 
-      const names = data.controls.map((c: any) => c.name)
+      const names = data.controls.map((c: ControlInfo) => c.name)
       expect(names).toContain('Root')
       expect(names).toContain('Button')
       expect(names).toContain('Label')
@@ -93,14 +97,17 @@ describe('ui', () => {
       expect(names).not.toContain('Sprite')
 
       // Check parent pointers
-      const innerLabel = data.controls.find((c: any) => c.name === 'InnerLabel')
-      expect(innerLabel.parent).toBe('Container')
+      const innerLabel = data.controls.find((c: ControlInfo) => c.name === 'InnerLabel')
+      expect(innerLabel).toBeDefined()
+      expect(innerLabel?.parent).toBe('Container')
 
-      const button = data.controls.find((c: any) => c.name === 'Button')
-      expect(button.parent).toBe('.')
+      const button = data.controls.find((c: ControlInfo) => c.name === 'Button')
+      expect(button).toBeDefined()
+      expect(button?.parent).toBe('.')
 
-      const root = data.controls.find((c: any) => c.name === 'Root')
-      expect(root.parent).toBe('(root)')
+      const root = data.controls.find((c: ControlInfo) => c.name === 'Root')
+      expect(root).toBeDefined()
+      expect(root?.parent).toBe('(root)')
     })
   })
 })
