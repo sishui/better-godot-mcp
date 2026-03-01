@@ -2,10 +2,14 @@
  * Integration tests for UI tool
  */
 
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { GodotConfig } from '../../src/godot/types.js'
 import { handleUI } from '../../src/tools/composite/ui.js'
-import { createTmpProject, createTmpScene, makeConfig } from '../fixtures.js'
+import { createTmpProject, createTmpScene, MINIMAL_TSCN, makeConfig } from '../fixtures.js'
+
+const CONTROL_SCENE = `[gd_scene format=3]\n\n[node name="Root" type="Control"]\n`
 
 const UI_SCENE = `[gd_scene load_steps=1 format=3 uid="uid://test"]
 
@@ -109,5 +113,168 @@ describe('ui', () => {
       expect(root).toBeDefined()
       expect(root?.parent).toBe('(root)')
     })
+  })
+
+  // ==========================================
+  // create_control
+  // ==========================================
+  describe('create_control', () => {
+    it('should create a Label node with given name', async () => {
+      createTmpScene(projectPath, 'test.tscn', MINIMAL_TSCN)
+
+      const result = await handleUI(
+        'create_control',
+        { scene_path: 'test.tscn', name: 'MyLabel', type: 'Label' },
+        config,
+      )
+
+      expect(result.content[0].text).toContain('MyLabel')
+      const content = readFileSync(join(projectPath, 'test.tscn'), 'utf-8')
+      expect(content).toContain('[node name="MyLabel" type="Label"')
+    })
+
+    it('should create Button with default text property', async () => {
+      createTmpScene(projectPath, 'test.tscn', MINIMAL_TSCN)
+
+      await handleUI('create_control', { scene_path: 'test.tscn', name: 'MyButton', type: 'Button' }, config)
+
+      const content = readFileSync(join(projectPath, 'test.tscn'), 'utf-8')
+      expect(content).toContain('text = "Click"')
+    })
+
+    it('should create control under specific parent', async () => {
+      createTmpScene(projectPath, 'test.tscn', MINIMAL_TSCN)
+
+      await handleUI(
+        'create_control',
+        { scene_path: 'test.tscn', name: 'ChildLabel', type: 'Label', parent: 'Root' },
+        config,
+      )
+
+      const content = readFileSync(join(projectPath, 'test.tscn'), 'utf-8')
+      expect(content).toContain('parent="Root"')
+    })
+
+    it('should add custom properties when properties object provided', async () => {
+      createTmpScene(projectPath, 'test.tscn', MINIMAL_TSCN)
+
+      await handleUI(
+        'create_control',
+        {
+          scene_path: 'test.tscn',
+          name: 'Progress',
+          type: 'ProgressBar',
+          properties: { custom_minimum_size: 'Vector2(200, 20)' },
+        },
+        config,
+      )
+
+      const content = readFileSync(join(projectPath, 'test.tscn'), 'utf-8')
+      expect(content).toContain('custom_minimum_size = Vector2(200, 20)')
+    })
+
+    it('should throw if no scene_path provided', async () => {
+      await expect(handleUI('create_control', { name: 'MyLabel', type: 'Label' }, config)).rejects.toThrow(
+        'No scene_path specified',
+      )
+    })
+
+    it('should throw if no name provided', async () => {
+      createTmpScene(projectPath, 'test.tscn', MINIMAL_TSCN)
+
+      await expect(handleUI('create_control', { scene_path: 'test.tscn', type: 'Label' }, config)).rejects.toThrow(
+        'No name specified',
+      )
+    })
+
+    it('should throw if scene not found', async () => {
+      await expect(handleUI('create_control', { scene_path: 'ghost.tscn', name: 'MyLabel' }, config)).rejects.toThrow(
+        'Scene not found',
+      )
+    })
+  })
+
+  // ==========================================
+  // set_theme
+  // ==========================================
+  describe('set_theme', () => {
+    it('should create theme .tres file with default font_size 16', async () => {
+      const result = await handleUI('set_theme', { theme_path: 'themes/main.tres' }, config)
+
+      expect(result.content[0].text).toContain('Created theme')
+      expect(existsSync(join(projectPath, 'themes/main.tres'))).toBe(true)
+    })
+
+    it('should use custom font_size when provided', async () => {
+      await handleUI('set_theme', { theme_path: 'themes/custom.tres', font_size: 24 }, config)
+
+      const content = readFileSync(join(projectPath, 'themes/custom.tres'), 'utf-8')
+      expect(content).toContain('default_font_size = 24')
+    })
+
+    it('should throw if no theme_path provided', async () => {
+      await expect(handleUI('set_theme', {}, config)).rejects.toThrow('No theme_path specified')
+    })
+  })
+
+  // ==========================================
+  // layout
+  // ==========================================
+  describe('layout', () => {
+    it('should apply full_rect preset anchors_preset=15', async () => {
+      createTmpScene(projectPath, 'ctrl.tscn', CONTROL_SCENE)
+
+      await handleUI('layout', { scene_path: 'ctrl.tscn', name: 'Root', preset: 'full_rect' }, config)
+
+      const content = readFileSync(join(projectPath, 'ctrl.tscn'), 'utf-8')
+      expect(content).toContain('anchors_preset = 15')
+    })
+
+    it('should apply center preset anchors_preset=8', async () => {
+      createTmpScene(projectPath, 'ctrl.tscn', CONTROL_SCENE)
+
+      await handleUI('layout', { scene_path: 'ctrl.tscn', name: 'Root', preset: 'center' }, config)
+
+      const content = readFileSync(join(projectPath, 'ctrl.tscn'), 'utf-8')
+      expect(content).toContain('anchors_preset = 8')
+    })
+
+    it('should apply top_wide preset anchors_preset=10', async () => {
+      createTmpScene(projectPath, 'ctrl.tscn', CONTROL_SCENE)
+
+      await handleUI('layout', { scene_path: 'ctrl.tscn', name: 'Root', preset: 'top_wide' }, config)
+
+      const content = readFileSync(join(projectPath, 'ctrl.tscn'), 'utf-8')
+      expect(content).toContain('anchors_preset = 10')
+    })
+
+    it('should throw for unknown preset', async () => {
+      createTmpScene(projectPath, 'ctrl.tscn', CONTROL_SCENE)
+
+      await expect(
+        handleUI('layout', { scene_path: 'ctrl.tscn', name: 'Root', preset: 'invalid_preset' }, config),
+      ).rejects.toThrow('Unknown layout preset')
+    })
+
+    it('should throw if node not found in scene', async () => {
+      createTmpScene(projectPath, 'ctrl.tscn', CONTROL_SCENE)
+
+      await expect(
+        handleUI('layout', { scene_path: 'ctrl.tscn', name: 'NonExistent', preset: 'full_rect' }, config),
+      ).rejects.toThrow('not found')
+    })
+
+    it('should throw if scene not found', async () => {
+      await expect(
+        handleUI('layout', { scene_path: 'ghost.tscn', name: 'Root', preset: 'full_rect' }, config),
+      ).rejects.toThrow('Scene not found')
+    })
+  })
+
+  // ==========================================
+  // errors
+  // ==========================================
+  it('should throw for unknown action', async () => {
+    await expect(handleUI('unknown', {}, config)).rejects.toThrow('Unknown action')
   })
 })

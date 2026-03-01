@@ -15,7 +15,8 @@
       "!**/*.d.ts",
       "!**/addons",
       "!**/temp",
-      "!**/.vscode"
+      "!**/.vscode",
+      "!**/coverage"
     ]
   },
   "formatter": {

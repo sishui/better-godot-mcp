@@ -180,6 +180,42 @@ describe('input-map', () => {
       expect(content).toContain('physical_keycode":32')
     })
 
+    it('should add mouse event to action', async () => {
+      const result = await handleInputMap(
+        'add_event',
+        {
+          project_path: projectPath,
+          action_name: 'jump',
+          event_type: 'mouse',
+          event_value: 'MOUSE_BUTTON_LEFT',
+        },
+        config,
+      )
+
+      expect(result.content[0].text).toContain('Added mouse event')
+      const content = readFileSync(join(projectPath, 'project.godot'), 'utf-8')
+      expect(content).toContain('InputEventMouseButton')
+      expect(content).toContain('"button_index":1')
+    })
+
+    it('should add joypad event to action', async () => {
+      const result = await handleInputMap(
+        'add_event',
+        {
+          project_path: projectPath,
+          action_name: 'jump',
+          event_type: 'joypad',
+          event_value: '0',
+        },
+        config,
+      )
+
+      expect(result.content[0].text).toContain('Added joypad event')
+      const content = readFileSync(join(projectPath, 'project.godot'), 'utf-8')
+      expect(content).toContain('InputEventJoypadButton')
+      expect(content).toContain('"button_index":0')
+    })
+
     it('should throw for non-existent action', async () => {
       await expect(
         handleInputMap(
@@ -213,5 +249,87 @@ describe('input-map', () => {
 
   it('should throw for unknown action', async () => {
     await expect(handleInputMap('invalid', {}, config)).rejects.toThrow('Unknown action')
+  })
+
+  // ==========================================
+  // validation
+  // ==========================================
+  describe('validation', () => {
+    it('should throw for invalid action_name in add_action', async () => {
+      await expect(
+        handleInputMap(
+          'add_action',
+          {
+            project_path: projectPath,
+            action_name: 'invalid name!',
+          },
+          config,
+        ),
+      ).rejects.toThrow('Invalid action name')
+    })
+
+    it('should throw for invalid action_name in remove_action', async () => {
+      await expect(
+        handleInputMap(
+          'remove_action',
+          {
+            project_path: projectPath,
+            action_name: 'bad@name',
+          },
+          config,
+        ),
+      ).rejects.toThrow('Invalid action name')
+    })
+
+    it('should throw for invalid action_name in add_event', async () => {
+      await expect(
+        handleInputMap(
+          'add_event',
+          {
+            project_path: projectPath,
+            action_name: 'bad name',
+            event_type: 'key',
+            event_value: 'KEY_A',
+          },
+          config,
+        ),
+      ).rejects.toThrow('Invalid action name')
+    })
+
+    it('should throw for missing action_name in add_action', async () => {
+      await expect(handleInputMap('add_action', { project_path: projectPath }, config)).rejects.toThrow(
+        'No action_name specified',
+      )
+    })
+
+    it('should throw for unknown key value', async () => {
+      await expect(
+        handleInputMap(
+          'add_event',
+          {
+            project_path: projectPath,
+            action_name: 'jump',
+            event_type: 'key',
+            event_value: 'KEY_NONEXISTENT',
+          },
+          config,
+        ),
+      ).rejects.toThrow('Unknown key')
+    })
+
+    it('should throw for unknown mouse button value', async () => {
+      await expect(
+        handleInputMap(
+          'add_event',
+          {
+            project_path: projectPath,
+            action_name: 'jump',
+            event_type: 'mouse',
+            event_value: 'MOUSE_BUTTON_INVALID',
+          },
+          config,
+        ),
+      ).rejects.toThrow('Unknown mouse button')
+    })
   })
 })

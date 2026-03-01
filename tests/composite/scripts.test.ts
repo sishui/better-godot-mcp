@@ -7,7 +7,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { GodotConfig } from '../../src/godot/types.js'
 import { handleScripts } from '../../src/tools/composite/scripts.js'
-import { createTmpProject, createTmpScript, makeConfig } from '../fixtures.js'
+import { createTmpProject, createTmpScene, createTmpScript, MINIMAL_TSCN, makeConfig } from '../fixtures.js'
 
 describe('scripts', () => {
   let projectPath: string
@@ -242,6 +242,87 @@ describe('scripts', () => {
           config,
         ),
       ).rejects.toThrow('not found')
+    })
+  })
+
+  // ==========================================
+  // attach
+  // ==========================================
+  describe('attach', () => {
+    it('should attach script to root node', async () => {
+      createTmpScene(projectPath, 'game.tscn', MINIMAL_TSCN)
+      createTmpScript(projectPath, 'game.gd')
+
+      const result = await handleScripts(
+        'attach',
+        {
+          project_path: projectPath,
+          scene_path: 'game.tscn',
+          script_path: 'game.gd',
+        },
+        config,
+      )
+
+      expect(result.content[0].text).toContain('Attached script')
+      const content = readFileSync(join(projectPath, 'game.tscn'), 'utf-8')
+      expect(content).toContain('script = ExtResource')
+      expect(content).toContain('res://game.gd')
+    })
+
+    it('should attach script to specific named node', async () => {
+      const scene = `[gd_scene format=3]\n\n[node name="Root" type="Node2D"]\n\n[node name="Player" type="CharacterBody2D" parent="."]\n`
+      createTmpScene(projectPath, 'level.tscn', scene)
+      createTmpScript(projectPath, 'player.gd')
+
+      await handleScripts(
+        'attach',
+        {
+          project_path: projectPath,
+          scene_path: 'level.tscn',
+          script_path: 'player.gd',
+          node_name: 'Player',
+        },
+        config,
+      )
+
+      const content = readFileSync(join(projectPath, 'level.tscn'), 'utf-8')
+      expect(content).toContain('res://player.gd')
+    })
+
+    it('should throw if node_name not found in scene', async () => {
+      createTmpScene(projectPath, 'test.tscn', MINIMAL_TSCN)
+      createTmpScript(projectPath, 'test.gd')
+
+      await expect(
+        handleScripts(
+          'attach',
+          {
+            project_path: projectPath,
+            scene_path: 'test.tscn',
+            script_path: 'test.gd',
+            node_name: 'NonExistent',
+          },
+          config,
+        ),
+      ).rejects.toThrow('not found')
+    })
+
+    it('should throw if scene not found', async () => {
+      await expect(
+        handleScripts(
+          'attach',
+          {
+            project_path: projectPath,
+            scene_path: 'ghost.tscn',
+            script_path: 'test.gd',
+          },
+          config,
+        ),
+      ).rejects.toThrow('Scene not found')
+    })
+
+    it('should throw if both scene_path and script_path missing', async () => {
+      await expect(handleScripts('attach', { project_path: projectPath }, config)).rejects.toThrow('required')
     })
   })
 
