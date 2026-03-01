@@ -2,7 +2,7 @@
  * Tests for Project tool
  */
 
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -18,7 +18,7 @@ vi.mock('../../src/godot/headless.js', () => ({
 
 // Mock child_process for stop command
 vi.mock('node:child_process', () => ({
-  execSync: vi.fn(),
+  execFileSync: vi.fn(),
 }))
 
 import { execGodotSync, runGodotProject } from '../../src/godot/headless.js'
@@ -109,11 +109,11 @@ describe('project', () => {
     it('should stop godot processes', async () => {
       const result = await handleProject('stop', {}, config)
       expect(result.content[0].text).toContain('Godot processes stopped')
-      expect(execSync).toHaveBeenCalled()
+      expect(execFileSync).toHaveBeenCalled()
     })
 
     it('should handle no running processes gracefully', async () => {
-      vi.mocked(execSync).mockImplementation(() => {
+      vi.mocked(execFileSync).mockImplementation(() => {
         throw new Error('Command failed')
       })
 

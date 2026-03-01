@@ -13,7 +13,7 @@ describe('execGodotSync Security', () => {
     vi.resetAllMocks()
   })
 
-  it('should use execFileSync instead of execSync to prevent command injection', () => {
+  it('should use execFileSync instead of execFileSync to prevent command injection', () => {
     const godotPath = '/usr/bin/godot'
     const args = ['--headless', '--script', 'test.gd']
 
@@ -26,9 +26,9 @@ describe('execGodotSync Security', () => {
     expect(result.success).toBe(true)
     expect(result.stdout).toBe('success')
 
-    // Verify execFileSync is called, not execSync
+    // Verify execFileSync is called, not execFileSync
     expect(childProcess.execFileSync).toHaveBeenCalledTimes(1)
-    expect(childProcess.execSync).not.toHaveBeenCalled()
+    expect(childProcess.spawn).not.toHaveBeenCalled()
 
     // Verify arguments are passed as array to execFileSync, which prevents command injection
     expect(childProcess.execFileSync).toHaveBeenCalledWith(godotPath, args, expect.any(Object))

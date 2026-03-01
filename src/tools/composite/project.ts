@@ -3,7 +3,7 @@
  * Actions: info | version | run | stop | settings_get | settings_set | export
  */
 
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
@@ -97,9 +97,9 @@ export async function handleProject(action: string, args: Record<string, unknown
     case 'stop': {
       try {
         if (process.platform === 'win32') {
-          execSync('taskkill /F /IM godot.exe /T', { stdio: 'pipe' })
+          execFileSync('taskkill', ['/F', '/IM', 'godot.exe', '/T'], { stdio: 'pipe' })
         } else {
-          execSync('pkill -f godot', { stdio: 'pipe' })
+          execFileSync('pkill', ['-f', 'godot'], { stdio: 'pipe' })
         }
         return formatSuccess('Godot processes stopped')
       } catch {

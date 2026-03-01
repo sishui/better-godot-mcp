@@ -8,7 +8,7 @@
  * 4. Validate version >= 4.1
  */
 
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 import { existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import type { DetectionResult, GodotVersion } from './types.js'
@@ -47,7 +47,7 @@ export function isVersionSupported(version: GodotVersion): boolean {
  */
 function tryGetVersion(binaryPath: string): GodotVersion | null {
   try {
-    const output = execSync(`"${binaryPath}" --version`, {
+    const output = execFileSync(binaryPath, ['--version'], {
       timeout: 5000,
       stdio: ['pipe', 'pipe', 'pipe'],
       encoding: 'utf-8',
@@ -76,7 +76,7 @@ function findInPath(): string | null {
   const cmd = process.platform === 'win32' ? 'where' : 'which'
   for (const name of GODOT_BINARY_NAMES) {
     try {
-      const result = execSync(`${cmd} ${name}`, {
+      const result = execFileSync(cmd, [name], {
         timeout: 3000,
         stdio: ['pipe', 'pipe', 'pipe'],
         encoding: 'utf-8',
