@@ -101,26 +101,55 @@ function generateTscnContent(rootName: string, rootType: string): string {
   return [`[gd_scene format=3]`, '', `[node name="${rootName}" type="${rootType}"]`, ''].join('\n')
 }
 
+function validateSceneArgs(action: string, args: Record<string, unknown>, config: GodotConfig) {
+  const projectPath = (args.project_path as string) || config.projectPath || undefined
+  const scenePath = args.scene_path as string
+  const newPath = args.new_path as string
+
+  // project_path required
+  if (['create', 'list', 'set_main'].includes(action) && !projectPath) {
+    throw new GodotMCPError('No project path specified', 'INVALID_ARGS', 'Provide project_path argument.')
+  }
+
+  // scene_path required
+  if (['create', 'info', 'delete', 'set_main'].includes(action) && !scenePath) {
+    const suggestion =
+      action === 'set_main'
+        ? 'Provide scene_path to set as main.'
+        : action === 'info'
+          ? 'Provide scene_path to parse.'
+          : action === 'delete'
+            ? 'Provide scene_path to delete.'
+            : 'Provide scene_path (e.g., "scenes/main.tscn").'
+    throw new GodotMCPError('No scene_path specified', 'INVALID_ARGS', suggestion)
+  }
+
+  // duplicate specifically requires both
+  if (action === 'duplicate' && (!scenePath || !newPath)) {
+    throw new GodotMCPError(
+      'Both scene_path and new_path required',
+      'INVALID_ARGS',
+      'Provide source and destination paths.',
+    )
+  }
+
+  return { projectPath, scenePath, newPath }
+}
+
+function resolvePath(base: string | undefined, relative: string): string {
+  return base ? resolve(base, relative) : resolve(relative)
+}
+
 export async function handleScenes(action: string, args: Record<string, unknown>, config: GodotConfig) {
-  const projectPath = (args.project_path as string) || config.projectPath
+  const { projectPath, scenePath, newPath } = validateSceneArgs(action, args, config)
 
   switch (action) {
     case 'create': {
-      if (!projectPath) {
-        throw new GodotMCPError('No project path specified', 'INVALID_ARGS', 'Provide project_path argument.')
-      }
-      const scenePath = args.scene_path as string
-      if (!scenePath) {
-        throw new GodotMCPError(
-          'No scene_path specified',
-          'INVALID_ARGS',
-          'Provide scene_path (e.g., "scenes/main.tscn").',
-        )
-      }
+      // projectPath and scenePath are guaranteed by validation
       const rootType = (args.root_type as string) || 'Node2D'
       const rootName = (args.root_name as string) || basename(scenePath, '.tscn')
 
-      const fullPath = resolve(projectPath, scenePath)
+      const fullPath = resolve(projectPath as string, scenePath)
       if (existsSync(fullPath)) {
         throw new GodotMCPError(
           `Scene already exists: ${scenePath}`,
@@ -137,10 +166,8 @@ export async function handleScenes(action: string, args: Record<string, unknown>
     }
 
     case 'list': {
-      if (!projectPath) {
-        throw new GodotMCPError('No project path specified', 'INVALID_ARGS', 'Provide project_path argument.')
-      }
-      const resolvedPath = resolve(projectPath)
+      // projectPath is guaranteed
+      const resolvedPath = resolve(projectPath as string)
       const scenes = findSceneFiles(resolvedPath)
       const relativePaths = scenes.map((s) => relative(resolvedPath, s).replace(/\\/g, '/'))
 
@@ -152,11 +179,8 @@ export async function handleScenes(action: string, args: Record<string, unknown>
     }
 
     case 'info': {
-      const scenePath = args.scene_path as string
-      if (!scenePath) {
-        throw new GodotMCPError('No scene_path specified', 'INVALID_ARGS', 'Provide scene_path to parse.')
-      }
-      const fullPath = projectPath ? resolve(projectPath, scenePath) : resolve(scenePath)
+      // scenePath is guaranteed
+      const fullPath = resolvePath(projectPath, scenePath)
       if (!existsSync(fullPath)) {
         throw new GodotMCPError(`Scene not found: ${scenePath}`, 'SCENE_ERROR', 'Check the file path and try again.')
       }
@@ -166,11 +190,8 @@ export async function handleScenes(action: string, args: Record<string, unknown>
     }
 
     case 'delete': {
-      const scenePath = args.scene_path as string
-      if (!scenePath) {
-        throw new GodotMCPError('No scene_path specified', 'INVALID_ARGS', 'Provide scene_path to delete.')
-      }
-      const fullPath = projectPath ? resolve(projectPath, scenePath) : resolve(scenePath)
+      // scenePath is guaranteed
+      const fullPath = resolvePath(projectPath, scenePath)
       if (!existsSync(fullPath)) {
         throw new GodotMCPError(`Scene not found: ${scenePath}`, 'SCENE_ERROR', 'Check the file path.')
       }
@@ -180,17 +201,10 @@ export async function handleScenes(action: string, args: Record<string, unknown>
     }
 
     case 'duplicate': {
-      const scenePath = args.scene_path as string
-      const newPath = args.new_path as string
-      if (!scenePath || !newPath) {
-        throw new GodotMCPError(
-          'Both scene_path and new_path required',
-          'INVALID_ARGS',
-          'Provide source and destination paths.',
-        )
-      }
-      const srcFull = projectPath ? resolve(projectPath, scenePath) : resolve(scenePath)
-      const dstFull = projectPath ? resolve(projectPath, newPath) : resolve(newPath)
+      // scenePath and newPath are guaranteed
+      const srcFull = resolvePath(projectPath, scenePath)
+      const dstFull = resolvePath(projectPath, newPath as string)
+
       if (!existsSync(srcFull)) {
         throw new GodotMCPError(`Source scene not found: ${scenePath}`, 'SCENE_ERROR', 'Check the source path.')
       }
@@ -208,15 +222,8 @@ export async function handleScenes(action: string, args: Record<string, unknown>
     }
 
     case 'set_main': {
-      if (!projectPath) {
-        throw new GodotMCPError('No project path specified', 'INVALID_ARGS', 'Provide project_path.')
-      }
-      const scenePath = args.scene_path as string
-      if (!scenePath) {
-        throw new GodotMCPError('No scene_path specified', 'INVALID_ARGS', 'Provide scene_path to set as main.')
-      }
-
-      const configPath = join(resolve(projectPath), 'project.godot')
+      // projectPath and scenePath are guaranteed
+      const configPath = join(resolve(projectPath as string), 'project.godot')
       if (!existsSync(configPath)) {
         throw new GodotMCPError('No project.godot found', 'PROJECT_NOT_FOUND', 'Verify the project path.')
       }
