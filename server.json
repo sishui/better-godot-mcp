@@ -1,0 +1,51 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.n24q02m/better-godot-mcp",
+  "description": "Composite MCP server for Godot Engine 4.x - 18 tools for scenes, nodes, GDScript, shaders, animation, tilemap, physics, audio, navigation, and UI.",
+  "repository": {
+    "url": "https://github.com/n24q02m/better-godot-mcp.git",
+    "source": "github"
+  },
+  "version": "1.3.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@n24q02m/better-godot-mcp",
+      "version": "1.3.0",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "description": "Default Godot project path. Most tools also accept project_path parameter.",
+          "isRequired": false,
+          "isSecret": false,
+          "name": "GODOT_PROJECT_PATH"
+        },
+        {
+          "description": "Path to Godot binary. Auto-detected if not set.",
+          "isRequired": false,
+          "isSecret": false,
+          "name": "GODOT_PATH"
+        }
+      ]
+    },
+    {
+      "registryType": "oci",
+      "identifier": "docker.io/n24q02m/better-godot-mcp:latest",
+      "runtimeHint": "docker",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "description": "Default Godot project path.",
+          "isRequired": false,
+          "isSecret": false,
+          "name": "GODOT_PROJECT_PATH"
+        }
+      ]
+    }
+  ]
+}
