@@ -134,15 +134,15 @@ describe('config', () => {
     })
 
     it('should reject paths with redirection', async () => {
-      await expect(handleConfig('set', { key: 'godot_path', value: '/usr/bin/godot > /tmp/out' }, config)).rejects.toThrow(
-        'Invalid characters',
-      )
+      await expect(
+        handleConfig('set', { key: 'godot_path', value: '/usr/bin/godot > /tmp/out' }, config),
+      ).rejects.toThrow('Invalid characters')
     })
 
     it('should reject paths with newlines', async () => {
-      await expect(handleConfig('set', { key: 'godot_path', value: '/usr/bin/godot\nrm -rf /' }, config)).rejects.toThrow(
-        'Invalid characters',
-      )
+      await expect(
+        handleConfig('set', { key: 'godot_path', value: '/usr/bin/godot\nrm -rf /' }, config),
+      ).rejects.toThrow('Invalid characters')
     })
 
     it('should allow timeout with numeric value (no path validation)', async () => {
