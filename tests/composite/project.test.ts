@@ -64,6 +64,12 @@ describe('project', () => {
       const badConfig = makeConfig()
       await expect(handleProject('info', {}, badConfig)).rejects.toThrow('No project path specified')
     })
+
+    it('should throw for non-existent project directory', async () => {
+      await expect(handleProject('info', { project_path: '/tmp/nonexistent' }, config)).rejects.toThrow(
+        'No project.godot found',
+      )
+    })
   })
 
   // ==========================================
@@ -99,6 +105,11 @@ describe('project', () => {
     it('should throw if godot not found', async () => {
       const badConfig = makeConfig({ projectPath })
       await expect(handleProject('run', {}, badConfig)).rejects.toThrow('Godot not found')
+    })
+
+    it('should throw if no project path', async () => {
+      const noProjectConfig = makeConfig({ godotPath: '/usr/bin/godot' })
+      await expect(handleProject('run', {}, noProjectConfig)).rejects.toThrow('No project path specified')
     })
   })
 
@@ -151,6 +162,18 @@ describe('project', () => {
       const data = JSON.parse(result.content[0].text)
       expect(data.value).toBeNull()
     })
+
+    it('should throw for missing key', async () => {
+      await expect(handleProject('settings_get', { project_path: projectPath }, config)).rejects.toThrow(
+        'No key specified',
+      )
+    })
+
+    it('should throw for missing project.godot', async () => {
+      await expect(
+        handleProject('settings_get', { project_path: '/tmp/nonexistent', key: 'a' }, config),
+      ).rejects.toThrow('No project.godot found')
+    })
   })
 
   // ==========================================
@@ -186,6 +209,18 @@ describe('project', () => {
       const content = readFileSync(join(projectPath, 'project.godot'), 'utf-8')
       expect(content).toContain('[debug]')
       expect(content).toContain('settings/fps/force_fps=60')
+    })
+
+    it('should throw for missing key/value', async () => {
+      await expect(handleProject('settings_set', { project_path: projectPath, key: 'k' }, config)).rejects.toThrow(
+        'key and value required',
+      )
+    })
+
+    it('should throw for missing project.godot', async () => {
+      await expect(
+        handleProject('settings_set', { project_path: '/tmp/nonexistent', key: 'a', value: 'b' }, config),
+      ).rejects.toThrow('No project.godot found')
     })
   })
 
@@ -225,6 +260,19 @@ describe('project', () => {
           config,
         ),
       ).rejects.toThrow('preset and output_path required')
+    })
+
+    it('should throw for missing godotPath', async () => {
+      const noGodotConfig = makeConfig({ projectPath })
+      await expect(
+        handleProject('export', { project_path: projectPath, preset: 'Web', output_path: 'o' }, noGodotConfig),
+      ).rejects.toThrow('Godot not found')
+    })
+
+    it('should throw for missing project_path', async () => {
+      await expect(
+        handleProject('export', { preset: 'Web', output_path: 'o' }, makeConfig({ godotPath: '/usr/bin/godot' })),
+      ).rejects.toThrow('No project path specified')
     })
   })
 
