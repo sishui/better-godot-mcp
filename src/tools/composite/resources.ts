@@ -4,7 +4,7 @@
  */
 
 import { readdir, readFile, stat, unlink } from 'node:fs/promises'
-import { extname, join, relative, resolve } from 'node:path'
+import { extname, join, relative } from 'node:path'
 import type { GodotConfig } from '../../godot/types.js'
 import { formatJSON, formatSuccess, GodotMCPError, throwUnknownAction } from '../helpers/errors.js'
 import { pathExists, safeResolve } from '../helpers/paths.js'
@@ -65,11 +65,12 @@ async function findResourceFiles(dir: string, extensions?: Set<string>): Promise
 
 export async function handleResources(action: string, args: Record<string, unknown>, config: GodotConfig) {
   const projectPath = (args.project_path as string) || config.projectPath
+  const baseDir = config.projectPath || process.cwd()
 
   switch (action) {
     case 'list': {
       if (!projectPath) throw new GodotMCPError('No project path specified', 'INVALID_ARGS', 'Provide project_path.')
-      const resolvedPath = resolve(projectPath)
+      const resolvedPath = safeResolve(baseDir, projectPath)
       const filterType = args.type as string | undefined
       let exts: Set<string> | undefined
       if (filterType) {

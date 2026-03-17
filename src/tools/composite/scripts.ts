@@ -4,7 +4,7 @@
  */
 
 import { mkdir, readdir, readFile, unlink, writeFile } from 'node:fs/promises'
-import { dirname, extname, join, relative, resolve } from 'node:path'
+import { dirname, extname, join, relative } from 'node:path'
 import type { GodotConfig } from '../../godot/types.js'
 import { formatJSON, formatSuccess, GodotMCPError, throwUnknownAction } from '../helpers/errors.js'
 import { pathExists, safeResolve } from '../helpers/paths.js'
@@ -124,6 +124,7 @@ async function findScriptFiles(dir: string): Promise<string[]> {
 
 export async function handleScripts(action: string, args: Record<string, unknown>, config: GodotConfig) {
   const projectPath = (args.project_path as string) || config.projectPath
+  const baseDir = config.projectPath || process.cwd()
 
   if (!projectPath && action !== 'list') {
     // List handles missing projectPath internally, but others need it for safeResolve base
@@ -228,7 +229,7 @@ export async function handleScripts(action: string, args: Record<string, unknown
       if (!projectPath)
         throw new GodotMCPError('No project path specified', 'INVALID_ARGS', 'Provide project_path argument.')
 
-      const resolvedPath = resolve(projectPath)
+      const resolvedPath = safeResolve(baseDir, projectPath)
       const scripts = await findScriptFiles(resolvedPath)
       const relativePaths = scripts.map((s) => relative(resolvedPath, s).replace(/\\/g, '/'))
 

@@ -39,7 +39,10 @@ export interface Transform2D {
 /**
  * Parse a Godot value expression string into a JavaScript value
  */
-export function parseGodotValue(expr: string): unknown {
+const MAX_PARSE_DEPTH = 32
+
+export function parseGodotValue(expr: string, _depth = 0): unknown {
+  if (_depth > MAX_PARSE_DEPTH) return expr
   const trimmed = expr.trim()
 
   // Boolean
@@ -122,7 +125,7 @@ export function parseGodotValue(expr: string): unknown {
     // Simple array parsing - split by comma (careful with nested)
     const inner = trimmed.slice(1, -1).trim()
     if (!inner) return []
-    return inner.split(',').map((item) => parseGodotValue(item.trim()))
+    return inner.split(',').map((item) => parseGodotValue(item.trim(), _depth + 1))
   }
 
   // Return as-is for unrecognized types

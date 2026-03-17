@@ -4,7 +4,7 @@
  */
 
 import { copyFile, mkdir, readdir, readFile, unlink, writeFile } from 'node:fs/promises'
-import { basename, dirname, extname, join, relative, resolve } from 'node:path'
+import { basename, dirname, extname, join, relative } from 'node:path'
 import type { GodotConfig, SceneInfo, SceneNode } from '../../godot/types.js'
 import { formatJSON, formatSuccess, GodotMCPError, throwUnknownAction } from '../helpers/errors.js'
 import { pathExists, safeResolve } from '../helpers/paths.js'
@@ -157,6 +157,7 @@ function resolvePath(base: string | undefined, relativePath: string): string {
 }
 
 export async function handleScenes(action: string, args: Record<string, unknown>, config: GodotConfig) {
+  const baseDir = config.projectPath || process.cwd()
   const { projectPath, scenePath, newPath } = validateSceneArgs(action, args, config)
 
   switch (action) {
@@ -183,7 +184,7 @@ export async function handleScenes(action: string, args: Record<string, unknown>
 
     case 'list': {
       // projectPath is guaranteed
-      const resolvedPath = resolve(projectPath as string)
+      const resolvedPath = safeResolve(baseDir, projectPath as string)
       const scenes = await findSceneFiles(resolvedPath)
       const relativePaths = scenes.map((s) => relative(resolvedPath, s).replace(/\\/g, '/'))
 
@@ -239,7 +240,7 @@ export async function handleScenes(action: string, args: Record<string, unknown>
 
     case 'set_main': {
       // projectPath and scenePath are guaranteed
-      const configPath = join(resolve(projectPath as string), 'project.godot')
+      const configPath = join(safeResolve(baseDir, projectPath as string), 'project.godot')
       if (!(await pathExists(configPath))) {
         throw new GodotMCPError('No project.godot found', 'PROJECT_NOT_FOUND', 'Verify the project path.')
       }

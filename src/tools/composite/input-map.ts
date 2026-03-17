@@ -4,10 +4,10 @@
  */
 
 import { readFile, writeFile } from 'node:fs/promises'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
 import type { GodotConfig } from '../../godot/types.js'
 import { formatJSON, formatSuccess, GodotMCPError, throwUnknownAction } from '../helpers/errors.js'
-import { pathExists } from '../helpers/paths.js'
+import { pathExists, safeResolve } from '../helpers/paths.js'
 import { escapeRegExp } from '../helpers/scene-parser.js'
 
 /**
@@ -135,9 +135,9 @@ function resolveMouseCode(value: string): number {
   )
 }
 
-async function getProjectGodotPath(projectPath: string | null | undefined): Promise<string> {
+async function getProjectGodotPath(projectPath: string | null | undefined, baseDir: string): Promise<string> {
   if (!projectPath) throw new GodotMCPError('No project path specified', 'INVALID_ARGS', 'Provide project_path.')
-  const configPath = join(resolve(projectPath), 'project.godot')
+  const configPath = join(safeResolve(baseDir, projectPath), 'project.godot')
   if (!(await pathExists(configPath)))
     throw new GodotMCPError('No project.godot found', 'PROJECT_NOT_FOUND', 'Verify the project path.')
   return configPath
@@ -216,11 +216,12 @@ function parseInputActions(content: string): Map<string, string[]> {
 }
 
 export async function handleInputMap(action: string, args: Record<string, unknown>, config: GodotConfig) {
+  const baseDir = config.projectPath || process.cwd()
   const projectPath = (args.project_path as string) || config.projectPath
 
   switch (action) {
     case 'list': {
-      const configPath = await getProjectGodotPath(projectPath)
+      const configPath = await getProjectGodotPath(projectPath, baseDir)
       const content = await readFile(configPath, 'utf-8')
       const actions = parseInputActions(content)
 
@@ -233,7 +234,7 @@ export async function handleInputMap(action: string, args: Record<string, unknow
     }
 
     case 'add_action': {
-      const configPath = await getProjectGodotPath(projectPath)
+      const configPath = await getProjectGodotPath(projectPath, baseDir)
       const actionName = args.action_name as string
       if (!actionName) throw new GodotMCPError('No action_name specified', 'INVALID_ARGS', 'Provide action_name.')
       if (typeof actionName !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(actionName)) {
@@ -266,7 +267,7 @@ export async function handleInputMap(action: string, args: Record<string, unknow
     }
 
     case 'remove_action': {
-      const configPath = await getProjectGodotPath(projectPath)
+      const configPath = await getProjectGodotPath(projectPath, baseDir)
       const actionName = args.action_name as string
       if (!actionName) throw new GodotMCPError('No action_name specified', 'INVALID_ARGS', 'Provide action_name.')
       if (typeof actionName !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(actionName)) {
@@ -291,7 +292,7 @@ export async function handleInputMap(action: string, args: Record<string, unknow
     }
 
     case 'add_event': {
-      const configPath = await getProjectGodotPath(projectPath)
+      const configPath = await getProjectGodotPath(projectPath, baseDir)
       const actionName = args.action_name as string
       const eventType = args.event_type as string
       const eventValue = args.event_value as string
