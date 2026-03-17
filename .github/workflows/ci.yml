@@ -9,6 +9,13 @@ on:
       - synchronize
       - reopened
       - ready_for_review
+  pull_request_target:
+    branches: [main]
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
   push:
     branches: [main]
   issue_comment:
@@ -28,7 +35,7 @@ jobs:
   pr-title-check:
     name: PR Title Check
     if: >-
-      github.event_name == 'pull_request'
+      github.event_name == 'pull_request_target'
       && github.event.sender.type != 'Bot'
     runs-on: ubuntu-latest
     permissions:
@@ -58,7 +65,7 @@ jobs:
           echo "Auto-fixed: $title -> $new_title"
   lint-and-test:
     name: Lint, Test & Build
-    if: github.event_name != 'issues'
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
     runs-on: ubuntu-latest
 
     steps:
@@ -124,7 +131,7 @@ jobs:
         github.event_name == 'issue_comment'
         && github.event.sender.type != 'Bot'
       ) || (
-        github.event_name == 'pull_request'
+        github.event_name == 'pull_request_target'
         && github.event.sender.type != 'Bot'
         && github.event.pull_request.user.login != 'n24q02m'
       )
@@ -166,7 +173,7 @@ jobs:
   email-notify:
     name: Email Notification
     if: >-
-      (github.event_name == 'issues' || github.event_name == 'pull_request')
+      (github.event_name == 'issues' || github.event_name == 'pull_request_target')
       && github.actor != 'n24q02m'
       && github.event.sender.type != 'Bot'
     runs-on: ubuntu-latest
