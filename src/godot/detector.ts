@@ -164,6 +164,8 @@ function getSystemPaths(): string[] {
       '/usr/bin/godot4',
       // Snap
       '/snap/bin/godot',
+      '/snap/bin/godot-4',
+      '/snap/godot-4/current/godot-4',
       // Flatpak
       '/var/lib/flatpak/exports/bin/org.godotengine.Godot',
     )
