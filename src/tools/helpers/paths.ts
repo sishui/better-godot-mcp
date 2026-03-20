@@ -23,7 +23,7 @@ export function safeResolve(baseDir: string, targetPath: string): string {
   // 3. relativePath should not be absolute if it's inside base
   if (relativePath === '..' || relativePath.startsWith(`..${sep}`) || isAbsolute(relativePath)) {
     throw new GodotMCPError(
-      `Access denied: Path '${targetPath}' resolves to '${resolvedTarget}' which is outside the project root '${resolvedBase}'.`,
+      `Access denied: Path '${targetPath}' is outside the project root.`,
       'INVALID_ARGS',
       'Ensure all file paths are within the project directory.',
     )

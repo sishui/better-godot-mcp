@@ -9,12 +9,12 @@
 
 ### Via npx (recommended)
 ```bash
-npx @anthropics/better-godot-mcp
+npx -y @n24q02m/better-godot-mcp@latest
 ```
 
 ### Via npm
 ```bash
-npm install -g @anthropics/better-godot-mcp
+npm install -g @n24q02m/better-godot-mcp
 better-godot-mcp
 ```
 
