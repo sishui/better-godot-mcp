@@ -121,9 +121,9 @@ export async function handleNodes(action: string, args: Record<string, unknown>,
     case 'remove': {
       const scenePath = args.scene_path as string
       if (!scenePath) throw new GodotMCPError('No scene_path specified', 'INVALID_ARGS', 'Provide scene_path.')
-      const nodeName = args.name as string
-      if (!nodeName)
-        throw new GodotMCPError('No node name specified', 'INVALID_ARGS', 'Provide name of node to remove.')
+      const rawName = args.name as string
+      if (!rawName) throw new GodotMCPError('No node name specified', 'INVALID_ARGS', 'Provide name of node to remove.')
+      const { path: nodeName } = normalizeNodePath(rawName)
 
       const fullPath = resolveScenePath(projectPath, scenePath)
       if (!(await pathExists(fullPath)))
@@ -139,7 +139,7 @@ export async function handleNodes(action: string, args: Record<string, unknown>,
     case 'rename': {
       const scenePath = args.scene_path as string
       if (!scenePath) throw new GodotMCPError('No scene_path specified', 'INVALID_ARGS', 'Provide scene_path.')
-      const nodeName = args.name as string
+      const { path: nodeName } = normalizeNodePath((args.name as string) || '')
       const newName = args.new_name as string
       if (!nodeName || !newName)
         throw new GodotMCPError('Both name and new_name required', 'INVALID_ARGS', 'Provide name and new_name.')
@@ -182,7 +182,7 @@ export async function handleNodes(action: string, args: Record<string, unknown>,
     case 'set_property': {
       const scenePath = args.scene_path as string
       if (!scenePath) throw new GodotMCPError('No scene_path specified', 'INVALID_ARGS', 'Provide scene_path.')
-      const nodeName = args.name as string
+      const { path: nodeName } = normalizeNodePath((args.name as string) || '')
       const property = args.property as string
       const value = args.value as string
       if (!nodeName || !property || value === undefined) {
@@ -207,7 +207,7 @@ export async function handleNodes(action: string, args: Record<string, unknown>,
     case 'get_property': {
       const scenePath = args.scene_path as string
       if (!scenePath) throw new GodotMCPError('No scene_path specified', 'INVALID_ARGS', 'Provide scene_path.')
-      const nodeName = args.name as string
+      const { path: nodeName } = normalizeNodePath((args.name as string) || '')
       const property = args.property as string
       if (!nodeName || !property) {
         throw new GodotMCPError('name and property required', 'INVALID_ARGS', 'Provide name and property.')

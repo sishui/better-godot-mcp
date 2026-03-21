@@ -45,9 +45,9 @@ async function getDocsDir(): Promise<string> {
   ]
 
   for (const candidate of candidates) {
-    // Performance optimization: using async pathExists instead of existsSync
-    // to avoid blocking the Node.js event loop during I/O operations
-    if (await pathExists(candidate)) return candidate
+    // Validate candidate contains actual tool docs (not a random 'docs' directory)
+    const markerFile = join(candidate, 'help.md')
+    if (await pathExists(markerFile)) return candidate
   }
 
   return join(process.cwd(), 'src', 'docs')
