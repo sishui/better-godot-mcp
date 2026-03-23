@@ -25,6 +25,7 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "check": "biome check . && tsc --noEmit",
+    "test:full": "vitest run tests/live/*.full.test.ts",
     "check:fix": "biome check --fix .",
     "clean": "rm -rf build bin",
     "prepublishOnly": "bun run build"
