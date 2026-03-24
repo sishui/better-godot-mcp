@@ -36,13 +36,15 @@ mcp-name: io.github.n24q02m/better-godot-mcp
 Via marketplace (includes skills: /build-scene, /debug-issue, /add-mechanic):
 
 ```bash
-/plugins add n24q02m/claude-plugins
+/plugin marketplace add n24q02m/claude-plugins
+/plugin install better-godot-mcp@claude-plugins
 ```
 
 Or install this plugin only:
 
 ```bash
-claude plugin add n24q02m/better-godot-mcp
+/plugin marketplace add n24q02m/better-godot-mcp
+/plugin install better-godot-mcp
 ```
 
 ### MCP Server
