@@ -8,11 +8,7 @@
       "args": [
         "-y",
         "@n24q02m/better-godot-mcp"
-      ],
-      "env": {
-        "GODOT_PATH": "",
-        "GODOT_PROJECT_PATH": ""
-      }
+      ]
     }
   },
   "contextFileName": "GEMINI.md"
