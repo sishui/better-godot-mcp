@@ -129,6 +129,19 @@ args = ["-y", "@n24q02m/better-godot-mcp@latest"]
 | `ui` | `create_control`, `set_theme`, `layout`, `list_controls` | UI control creation and theming |
 | `help` | - | Get full documentation for any tool |
 
+## Zero-Config Setup
+
+No environment variables needed. On first start, the server opens a setup page in your browser:
+
+1. Start the server (via plugin, `npx`, or Docker)
+2. A setup URL appears -- open it in any browser
+3. Fill in your credentials on the guided form
+4. Credentials are encrypted and stored locally
+
+Your credentials never leave your machine. The relay server only sees encrypted data.
+
+For CI/automation, you can still use environment variables (see below).
+
 ## Configuration
 
 | Variable | Required | Default | Description |
