@@ -42,6 +42,22 @@ Via marketplace (includes skills: /build-scene, /debug-issue, /add-mechanic):
 
 
 
+### Gemini CLI Extension
+
+```bash
+gemini extensions install https://github.com/n24q02m/better-godot-mcp
+```
+
+### Codex CLI
+
+Add to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.better-godot-mcp]
+command = "npx"
+args = ["-y", "@n24q02m/better-godot-mcp"]
+```
+
 ### MCP Server
 
 #### Option 1: npx
@@ -58,30 +74,6 @@ Via marketplace (includes skills: /build-scene, /debug-issue, /add-mechanic):
 ```
 
 Other runners: `bun x`, `pnpm dlx`, `yarn dlx` also work.
-
-<details>
-<summary>Other MCP clients (Cursor, Codex, Gemini CLI)</summary>
-
-```jsonc
-// Cursor, Windsurf, Cline, Amp, OpenCode
-{
-  "mcpServers": {
-    "better-godot": {
-      "command": "npx",
-      "args": ["-y", "@n24q02m/better-godot-mcp@latest"]
-    }
-  }
-}
-```
-
-```toml
-# Codex (~/.codex/config.toml)
-[mcp_servers.better-godot]
-command = "npx"
-args = ["-y", "@n24q02m/better-godot-mcp@latest"]
-```
-
-</details>
 
 #### Option 2: Docker
 
@@ -151,7 +143,7 @@ For CI/automation, you can still use environment variables (see below).
 - `run`/`stop`/`export` actions require Godot binary to be installed
 - Docker mode has limited filesystem access (mount your project directory)
 
-### Security
+## Security
 
 - **Binary detection** -- Multi-path Godot detection (env, PATH, common locations)
 - **Project validation** -- Verifies project.godot exists before operations
@@ -165,32 +157,6 @@ cd better-godot-mcp
 bun install
 bun run dev
 ```
-
-## Compatible With
-
-[![Claude Code](https://img.shields.io/badge/Claude_Code-000000?logo=anthropic&logoColor=white)](#quick-start)
-[![Claude Desktop](https://img.shields.io/badge/Claude_Desktop-F9DC7C?logo=anthropic&logoColor=black)](#quick-start)
-[![Cursor](https://img.shields.io/badge/Cursor-000000?logo=cursor&logoColor=white)](#quick-start)
-[![VS Code Copilot](https://img.shields.io/badge/VS_Code_Copilot-007ACC?logo=visualstudiocode&logoColor=white)](#quick-start)
-[![Antigravity](https://img.shields.io/badge/Antigravity-4285F4?logo=google&logoColor=white)](#quick-start)
-[![Gemini CLI](https://img.shields.io/badge/Gemini_CLI-8E75B2?logo=googlegemini&logoColor=white)](#quick-start)
-[![OpenAI Codex](https://img.shields.io/badge/Codex-412991?logo=openai&logoColor=white)](#quick-start)
-[![OpenCode](https://img.shields.io/badge/OpenCode-F7DF1E?logoColor=black)](#quick-start)
-
-## Also by n24q02m
-
-| Server | Description |
-|--------|-------------|
-| [wet-mcp](https://github.com/n24q02m/wet-mcp) | Web search, content extraction, and documentation indexing |
-| [mnemo-mcp](https://github.com/n24q02m/mnemo-mcp) | Persistent AI memory with hybrid search and cross-machine sync |
-| [better-notion-mcp](https://github.com/n24q02m/better-notion-mcp) | Markdown-first Notion API with 9 composite tools |
-| [better-email-mcp](https://github.com/n24q02m/better-email-mcp) | Email (IMAP/SMTP) with multi-account and auto-discovery |
-| [better-telegram-mcp](https://github.com/n24q02m/better-telegram-mcp) | Telegram dual-mode (Bot API + MTProto) with 6 composite tools |
-| [better-code-review-graph](https://github.com/n24q02m/better-code-review-graph) | Knowledge graph for token-efficient code reviews |
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
