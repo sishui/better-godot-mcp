@@ -103,5 +103,12 @@ export async function ensureConfig(): Promise<GodotRelayConfig | null> {
   await writeConfig(SERVER_NAME, config)
   console.error(`[${SERVER_NAME}] Project config saved successfully`)
 
+  // Notify relay page that setup is complete
+  await fetch(`${relayUrl}/api/sessions/${session.sessionId}/messages`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'complete', text: 'Godot config saved. Setup complete!' }),
+  }).catch(() => {})
+
   return parseRelayConfig(config)
 }
