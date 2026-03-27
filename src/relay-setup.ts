@@ -1,15 +1,11 @@
 /**
- * Relay-first setup flow for better-godot-mcp.
+ * Credential resolution for better-godot-mcp.
  *
- * Always shows the relay URL at startup so users can configure the Godot
- * project path via browser. If the user skips, tools will prompt for
- * project_path on each call.
- *
- * Resolution order:
- * 1. Environment variables (GODOT_PROJECT_PATH -- checked by caller)
- * 2. Encrypted config file (~/.config/mcp/config.enc)
- * 3. Relay setup (browser-based form, 30s timeout for optional-config server)
- * 4. No default project path (tools accept project_path param)
+ * Resolution order (relay only when ALL local sources are empty):
+ * 1. ENV VARS          -- GODOT_PROJECT_PATH (checked by caller in init-server.ts)
+ * 2. RELAY CONFIG      -- Saved from previous relay setup (~/.config/mcp/config.enc)
+ * 3. RELAY SETUP       -- Interactive, ONLY when steps 1-2 are ALL empty (30s timeout)
+ * 4. NO DEFAULT PATH   -- Tools accept project_path param per call
  *
  * Godot binary auto-detection is handled separately by detector.ts,
  * so the relay primarily collects the project path.
@@ -50,10 +46,10 @@ export function parseRelayConfig(config: Record<string, string>): GodotRelayConf
 }
 
 /**
- * Resolve config or trigger relay setup (relay-first design).
+ * Resolve config: config file -> relay setup -> no default path.
  *
- * Always shows relay URL at startup. Uses 30s timeout since Godot MCP
- * works without a default project path (tools accept project_path param).
+ * Relay is ONLY triggered when steps 1-2 are ALL empty (first-time setup).
+ * Uses 30s timeout since Godot MCP works without a default project path.
  *
  * Returns GodotRelayConfig, or null if setup fails/skipped.
  *
@@ -62,14 +58,14 @@ export function parseRelayConfig(config: Record<string, string>): GodotRelayConf
  * GODOT_PROJECT_PATH is not set via env.
  */
 export async function ensureConfig(): Promise<GodotRelayConfig | null> {
-  // Check config file
+  // 1. Check saved relay config file
   const result = await resolveConfig(SERVER_NAME, REQUIRED_FIELDS)
   if (result.config !== null) {
     console.error(`[${SERVER_NAME}] Project config loaded from ${result.source}`)
     return parseRelayConfig(result.config)
   }
 
-  // No config found -- always trigger relay setup (relay-first)
+  // 2. No local credentials found -- trigger relay setup
   console.error(`[${SERVER_NAME}] No project path configured. Starting relay setup...`)
 
   const relayUrl = DEFAULT_RELAY_URL
