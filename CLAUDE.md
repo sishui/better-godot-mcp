@@ -74,4 +74,4 @@ PSR v10 (workflow_dispatch) -> npm + Docker (amd64+arm64) + GHCR + MCP Registry.
 - Docker mode: mount project directory de truy cap filesystem.
 - Tiered descriptions: Tier 1 (compact, luon load) + Tier 2 (full docs qua `help` tool).
 - Pre-commit: biome check, tsc --noEmit. Pre-push: bun test.
-- Infisical project: `2824bb28-b67d-4f27-88ec-6d1198d8b34a`
+- Infisical project: `430ac905-a60f-4597-b5cd-1727daa95389`
