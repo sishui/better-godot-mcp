@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.n24q02m/better-godot-mcp",
-  "description": "MCP server for Godot Engine 4.x with 18 tools for scenes, scripts, and shaders.",
+  "description": "MCP server for Godot Engine 4.x with 17 tools for scenes, scripts, and shaders.",
   "repository": {
     "url": "https://github.com/n24q02m/better-godot-mcp.git",
     "source": "github"
