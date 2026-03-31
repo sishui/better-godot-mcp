@@ -4,17 +4,37 @@
 
 import * as child_process from 'node:child_process'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { execGodotScript, execGodotSync, launchGodotEditor, runGodotProject } from '../../src/godot/headless.js'
+import {
+  execGodotAsync,
+  execGodotScript,
+  execGodotSync,
+  launchGodotEditor,
+  runGodotProject,
+} from '../../src/godot/headless.js'
 
-vi.mock('node:child_process', () => ({
-  spawnSync: vi.fn(),
-  spawn: vi.fn(),
-  execFile: vi.fn(),
+// execFileAsyncMock is hoisted so it is available inside the vi.mock factory.
+// We attach it as [promisify.custom] on execFile so that promisify(execFile)
+// returns { stdout, stderr } correctly (matching Node.js built-in behaviour).
+const { execFileAsyncMock } = vi.hoisted(() => ({
+  execFileAsyncMock:
+    vi.fn<(cmd: string, args: string[], opts: unknown) => Promise<{ stdout: string; stderr: string }>>(),
 }))
+
+vi.mock('node:child_process', async () => {
+  const { promisify: _promisify } = await import('node:util')
+  const execFileMock = vi.fn()
+  ;(execFileMock as unknown as Record<symbol, unknown>)[_promisify.custom] = execFileAsyncMock
+  return {
+    spawnSync: vi.fn(),
+    spawn: vi.fn(),
+    execFile: execFileMock,
+  }
+})
 
 describe('headless', () => {
   beforeEach(() => {
     vi.resetAllMocks()
+    execFileAsyncMock.mockReset()
   })
 
   // ==========================================
@@ -163,6 +183,85 @@ describe('headless', () => {
 
       const result = launchGodotEditor('/usr/bin/godot', '/tmp/project')
       expect(result.pid).toBeUndefined()
+    })
+  })
+
+  // ==========================================
+  // execGodotAsync
+  // ==========================================
+  describe('execGodotAsync', () => {
+    it('should return success result with stdout and stderr trimmed', async () => {
+      execFileAsyncMock.mockResolvedValue({ stdout: '  output  ', stderr: '  warn  ' })
+
+      const result = await execGodotAsync('/usr/bin/godot', ['--version'])
+      expect(result.success).toBe(true)
+      expect(result.stdout).toBe('output')
+      expect(result.stderr).toBe('warn')
+      expect(result.exitCode).toBe(0)
+    })
+
+    it('should use default timeout of 30_000 when none specified', async () => {
+      execFileAsyncMock.mockResolvedValue({ stdout: '', stderr: '' })
+
+      await execGodotAsync('/usr/bin/godot', ['--version'])
+      expect(execFileAsyncMock).toHaveBeenCalledWith(
+        '/usr/bin/godot',
+        ['--version'],
+        expect.objectContaining({ timeout: 30_000 }),
+      )
+    })
+
+    it('should pass custom timeout through to execFile', async () => {
+      execFileAsyncMock.mockResolvedValue({ stdout: '', stderr: '' })
+
+      await execGodotAsync('/usr/bin/godot', ['--version'], { timeout: 5000 })
+      expect(execFileAsyncMock).toHaveBeenCalledWith(
+        '/usr/bin/godot',
+        ['--version'],
+        expect.objectContaining({ timeout: 5000 }),
+      )
+    })
+
+    it('should pass custom cwd through to execFile', async () => {
+      execFileAsyncMock.mockResolvedValue({ stdout: '', stderr: '' })
+
+      await execGodotAsync('/usr/bin/godot', ['--version'], { cwd: '/tmp/project' })
+      expect(execFileAsyncMock).toHaveBeenCalledWith(
+        '/usr/bin/godot',
+        ['--version'],
+        expect.objectContaining({ cwd: '/tmp/project' }),
+      )
+    })
+
+    it('should return failure result with stdout, stderr and exitCode from error', async () => {
+      const error = Object.assign(new Error('fail'), { stdout: '  out  ', stderr: '  err  ', code: 2 })
+      execFileAsyncMock.mockRejectedValue(error)
+
+      const result = await execGodotAsync('/usr/bin/godot', ['--version'])
+      expect(result.success).toBe(false)
+      expect(result.stdout).toBe('out')
+      expect(result.stderr).toBe('err')
+      expect(result.exitCode).toBe(2)
+    })
+
+    it('should fall back to error.message and exitCode 1 when error has no stdout/stderr/code', async () => {
+      execFileAsyncMock.mockRejectedValue(new Error('command not found'))
+
+      const result = await execGodotAsync('/usr/bin/godot', ['--version'])
+      expect(result.success).toBe(false)
+      expect(result.stdout).toBe('')
+      expect(result.stderr).toBe('command not found')
+      expect(result.exitCode).toBe(1)
+    })
+
+    it('should return empty strings when success stdout and stderr are empty', async () => {
+      execFileAsyncMock.mockResolvedValue({ stdout: '', stderr: '' })
+
+      const result = await execGodotAsync('/usr/bin/godot', ['--version'])
+      expect(result.success).toBe(true)
+      expect(result.stdout).toBe('')
+      expect(result.stderr).toBe('')
+      expect(result.exitCode).toBe(0)
     })
   })
 })
