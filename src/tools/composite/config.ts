@@ -40,14 +40,16 @@ export async function handleConfig(action: string, args: Record<string, unknown>
       }
 
       // Validate paths don't contain shell metacharacters
+      // Note: backslash (\) is allowed since it's the Windows path separator
+      // and we use spawnSync/spawn (not shell exec), so it's not a security risk
       if (
         (key === 'project_path' || key === 'godot_path') &&
-        (typeof value !== 'string' || /[;&|`$(){}<>'"\\\0\n\r]/.test(value))
+        (typeof value !== 'string' || /[;&|`$(){}<>'"\0\n\r]/.test(value))
       ) {
         throw new GodotMCPError(
           `Invalid characters in ${key}`,
           'INVALID_ARGS',
-          'Path must not contain shell metacharacters: ; & | ` $ ( ) { } < > \' " \\ \\0 \\n \\r',
+          'Path must not contain shell metacharacters: ; & | ` $ ( ) { } < > \' " \\0 \\n \\r',
         )
       }
 

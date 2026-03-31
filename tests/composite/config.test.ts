@@ -139,10 +139,13 @@ describe('config', () => {
       ).rejects.toThrow('Invalid characters')
     })
 
-    it('should reject paths with backslash escape sequences', async () => {
-      await expect(
-        handleConfig('set', { key: 'godot_path', value: '/usr/bin/godot\\n--script' }, config),
-      ).rejects.toThrow('Invalid characters')
+    it('should allow Windows-style paths with backslashes', async () => {
+      const result = await handleConfig(
+        'set',
+        { key: 'godot_path', value: 'C:\\Program Files\\Godot\\godot.exe' },
+        config,
+      )
+      expect(result.content[0].text).toContain('Config updated')
     })
 
     it('should reject paths with newlines', async () => {
