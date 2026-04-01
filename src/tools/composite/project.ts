@@ -104,6 +104,8 @@ export async function handleProject(action: string, args: Record<string, unknown
         return formatSuccess('No running Godot processes found (tracked by this server)')
       }
 
+      // SECURITY: Tracked PIDs are used for targeted termination to prevent Overly Broad Process Termination.
+      // Broad matching (like pkill or taskkill /IM) could unintentionally terminate unrelated Godot instances.
       let stoppedCount = 0
       for (const pid of config.activePids) {
         try {
