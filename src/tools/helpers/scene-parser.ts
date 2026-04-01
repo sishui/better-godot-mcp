@@ -336,19 +336,54 @@ export function renameNodeInContent(content: string, oldName: string, newName: s
     return content
   }
 
-  const escapedOldName = escapeRegExp(oldName)
+  const result: string[] = []
+  let pos = 0
+  const len = content.length
 
-  // Replace in node declarations
-  let result = content.replace(new RegExp(`name="${escapedOldName}"`, 'g'), `name="${newName}"`)
-  // Replace in parent references
-  result = result.replace(new RegExp(`parent="${escapedOldName}"`, 'g'), `parent="${newName}"`)
-  // Replace in parent paths containing the old name
-  result = result.replace(new RegExp(`parent="([^"]*/)${escapedOldName}(/[^"]*)"`, 'g'), `parent="$1${newName}$2"`)
-  result = result.replace(new RegExp(`parent="([^"]*/)${escapedOldName}"`, 'g'), `parent="$1${newName}"`)
-  // Replace in connection references
-  result = result.replace(new RegExp(`from="${escapedOldName}"`, 'g'), `from="${newName}"`)
-  result = result.replace(new RegExp(`to="${escapedOldName}"`, 'g'), `to="${newName}"`)
-  return result
+  const escapedOldName = escapeRegExp(oldName)
+  const rxName = new RegExp(`name="${escapedOldName}"`, 'g')
+  const rxParent = new RegExp(`parent="${escapedOldName}"`, 'g')
+  const rxParentMid = new RegExp(`parent="([^"]*/)${escapedOldName}(/[^"]*)"`, 'g')
+  const rxParentEnd = new RegExp(`parent="([^"]*/)${escapedOldName}"`, 'g')
+  const rxFrom = new RegExp(`from="${escapedOldName}"`, 'g')
+  const rxTo = new RegExp(`to="${escapedOldName}"`, 'g')
+
+  // Use <= len to ensure we don't drop a trailing empty line
+  while (pos <= len) {
+    let nextNewline = content.indexOf('\n', pos)
+    if (nextNewline === -1) nextNewline = len
+
+    let start = pos
+    while (start < nextNewline && content.charCodeAt(start) <= 32) start++
+
+    const firstChar = content.charCodeAt(start)
+    const secondChar = content.charCodeAt(start + 1)
+
+    let line = content.slice(pos, nextNewline)
+
+    if (firstChar === 91) {
+      if (secondChar === 110) {
+        // '[n' -> node
+        if (line.includes(oldName)) {
+          line = line.replace(rxName, `name="${newName}"`)
+          line = line.replace(rxParentMid, `parent="$1${newName}$2"`)
+          line = line.replace(rxParentEnd, `parent="$1${newName}"`)
+          line = line.replace(rxParent, `parent="${newName}"`)
+        }
+      } else if (secondChar === 99) {
+        // '[c' -> connection
+        if (line.includes(oldName)) {
+          line = line.replace(rxFrom, `from="${newName}"`)
+          line = line.replace(rxTo, `to="${newName}"`)
+        }
+      }
+    }
+
+    result.push(line)
+    pos = nextNewline + 1
+  }
+
+  return result.join('\n')
 }
 
 /**
