@@ -5,7 +5,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   findNode,
-  getNodePath,
   getNodeProperty,
   parseSceneContent,
   removeNodeFromContent,
@@ -152,31 +151,6 @@ describe('scene-parser', () => {
     it('should return undefined for missing node', () => {
       const scene = parseSceneContent(COMPLEX_TSCN)
       expect(findNode(scene, 'NonExistent')).toBeUndefined()
-    })
-  })
-
-  // ==========================================
-  // getNodePath
-  // ==========================================
-  describe('getNodePath', () => {
-    it('should return name for root node (no parent)', () => {
-      const scene = parseSceneContent(COMPLEX_TSCN)
-      const root = scene.nodes[0]
-      expect(getNodePath(scene, root)).toBe('Player')
-    })
-
-    it('should return name for direct child (parent=".")', () => {
-      const scene = parseSceneContent(COMPLEX_TSCN)
-      const sprite = scene.nodes.find((n) => n.name === 'Sprite')
-      if (!sprite) throw new Error('Sprite node not found')
-      expect(getNodePath(scene, sprite)).toBe('Sprite')
-    })
-
-    it('should return full path for nested node', () => {
-      const scene = parseSceneContent(COMPLEX_TSCN)
-      const label = scene.nodes.find((n) => n.name === 'Label')
-      if (!label) throw new Error('Label node not found')
-      expect(getNodePath(scene, label)).toBe('UI/Label')
     })
   })
 

@@ -253,15 +253,6 @@ export function findNode(scene: ParsedScene, name: string): SceneNodeInfo | unde
 }
 
 /**
- * Get the full node path for a node
- */
-export function getNodePath(_scene: ParsedScene, node: SceneNodeInfo): string {
-  if (!node.parent) return node.name // Root node
-  if (node.parent === '.') return node.name
-  return `${node.parent}/${node.name}`
-}
-
-/**
  * Remove a node from scene content by name
  */
 export function removeNodeFromContent(content: string, nodeName: string): string {
