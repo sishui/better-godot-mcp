@@ -7,7 +7,7 @@
  * key/subkey=value
  */
 
-import { readFile, writeFile } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 
 export interface ProjectSettings {
   sections: Map<string, Map<string, string>>
@@ -151,13 +151,6 @@ export function setSettingInContent(content: string, path: string, value: string
   }
 
   return result.join('\n')
-}
-
-/**
- * Write project settings back to file asynchronously
- */
-export async function writeProjectSettingsAsync(filePath: string, content: string): Promise<void> {
-  await writeFile(filePath, content, 'utf-8')
 }
 
 /**
