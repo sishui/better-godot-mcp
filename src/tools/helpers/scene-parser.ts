@@ -181,10 +181,20 @@ export function parseSceneContent(content: string): ParsedScene {
                 instance: instanceMatch?.[1],
                 properties: {},
                 groups: groupsMatch
-                  ? groupsMatch[1]
-                      .split(',')
-                      .map((g) => g.trim().replace(/"/g, ''))
-                      .filter(Boolean)
+                  ? (() => {
+                      const groupsStr = groupsMatch[1]
+                      const result: string[] = []
+                      let startIdx = 0
+                      const len = groupsStr.length
+                      while (startIdx < len) {
+                        let endIdx = groupsStr.indexOf(',', startIdx)
+                        if (endIdx === -1) endIdx = len
+                        const group = groupsStr.slice(startIdx, endIdx).trim().replace(/"/g, '')
+                        if (group) result.push(group)
+                        startIdx = endIdx + 1
+                      }
+                      return result.length > 0 ? result : undefined
+                    })()
                   : undefined,
               }
             }
