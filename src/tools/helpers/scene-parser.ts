@@ -11,7 +11,7 @@
  * [connection signal="..." from="..." to="..." method="..."]
  */
 
-import { readFile, writeFile } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 
 // Pre-compiled regular expressions for parsing scene sections
 const rxGdSceneFormat = /format=(\d+)/
@@ -415,11 +415,4 @@ export function setNodePropertyInContent(content: string, nodeName: string, prop
 export function getNodeProperty(scene: ParsedScene, nodeName: string, property: string): string | undefined {
   const node = findNode(scene, nodeName)
   return node?.properties[property]
-}
-
-/**
- * Write a parsed scene back to file (using raw content)
- */
-export async function writeScene(filePath: string, content: string): Promise<void> {
-  await writeFile(filePath, content, 'utf-8')
 }
