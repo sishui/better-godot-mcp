@@ -2,11 +2,15 @@
  * Tests for .tscn scene parser and manipulation functions
  */
 
+import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
   escapeRegExp,
   findNode,
   getNodeProperty,
+  parseScene,
   parseSceneContent,
   removeNodeFromContent,
   renameNodeInContent,
@@ -15,6 +19,27 @@ import {
 import { COMPLEX_TSCN, MINIMAL_TSCN, SCENE_WITH_GROUPS } from '../fixtures.js'
 
 describe('scene-parser', () => {
+  // ==========================================
+  // parseScene
+  // ==========================================
+  describe('parseScene', () => {
+    it('should parse a scene file from disk', async () => {
+      const tmpDir = join(tmpdir(), `scene-parser-test-${Math.random().toString(36).slice(2)}`)
+      await mkdir(tmpDir, { recursive: true })
+      const filePath = join(tmpDir, 'test.tscn')
+      await writeFile(filePath, MINIMAL_TSCN, 'utf-8')
+
+      try {
+        const scene = await parseScene(filePath)
+        expect(scene.header.format).toBe(3)
+        expect(scene.nodes).toHaveLength(1)
+        expect(scene.nodes[0].name).toBe('Root')
+      } finally {
+        await rm(tmpDir, { recursive: true, force: true })
+      }
+    })
+  })
+
   // ==========================================
   // parseSceneContent
   // ==========================================
@@ -42,6 +67,16 @@ describe('scene-parser', () => {
       expect(scene.extResources[0].id).toBe('1_abc')
       expect(scene.extResources[1].type).toBe('Texture2D')
       expect(scene.extResources[1].id).toBe('2_def')
+    })
+
+    it('should parse ext_resource without uid', () => {
+      const content = `[gd_scene format=3]
+[ext_resource type="Texture2D" path="res://icon.svg" id="1"]
+`
+      const scene = parseSceneContent(content)
+      expect(scene.extResources).toHaveLength(1)
+      expect(scene.extResources[0].uid).toBeUndefined()
+      expect(scene.extResources[0].path).toBe('res://icon.svg')
     })
 
     it('should parse sub_resources with properties', () => {
@@ -119,6 +154,16 @@ describe('scene-parser', () => {
 
 ; Another comment
 [node name="Root" type="Node"]
+`
+      const scene = parseSceneContent(content)
+      expect(scene.nodes).toHaveLength(1)
+      expect(scene.nodes[0].name).toBe('Root')
+    })
+
+    it('should handle extra whitespace', () => {
+      const content = `  [gd_scene format=3]
+
+  [node name="Root" type="Node"]
 `
       const scene = parseSceneContent(content)
       expect(scene.nodes).toHaveLength(1)
@@ -208,6 +253,11 @@ describe('scene-parser', () => {
       expect(result).toContain('from="Hero"')
       expect(result).toContain('to="Hero"')
     })
+
+    it('should handle non-existent node (fast-path)', () => {
+      const result = renameNodeInContent(MINIMAL_TSCN, 'NonExistent', 'NewName')
+      expect(result).toBe(MINIMAL_TSCN)
+    })
   })
 
   // ==========================================
@@ -230,6 +280,11 @@ describe('scene-parser', () => {
     it('should add property to last node in file', () => {
       const result = setNodePropertyInContent(COMPLEX_TSCN, 'Label', 'visible', 'true')
       expect(result).toContain('visible = true')
+    })
+
+    it('should handle non-existent node (fast-path)', () => {
+      const result = setNodePropertyInContent(MINIMAL_TSCN, 'NonExistent', 'visible', 'true')
+      expect(result).toBe(MINIMAL_TSCN)
     })
   })
 
@@ -273,6 +328,11 @@ describe('scene-parser', () => {
 
     it('should escape special characters mixed with plain text', () => {
       expect(escapeRegExp('node.name[1]')).toBe('node\\.name\\[1\\]')
+    })
+
+    it('should handle strings with multiple occurrences of special characters', () => {
+      expect(escapeRegExp('...')).toBe('\\.\\.\\.')
+      expect(escapeRegExp('[[[]]]')).toBe('\\[\\[\\[\\]\\]\\]')
     })
   })
 })
