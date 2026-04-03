@@ -9,7 +9,7 @@
  */
 
 import { execFileSync } from 'node:child_process'
-import { accessSync, constants, existsSync, readdirSync } from 'node:fs'
+import { accessSync, constants, existsSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import type { DetectionResult, GodotVersion } from './types.js'
 
@@ -20,8 +20,12 @@ const MIN_VERSION = { major: 4, minor: 1 }
  * Parse Godot version string (e.g., "Godot Engine v4.6.stable.official")
  */
 export function parseGodotVersion(versionOutput: string): GodotVersion | null {
-  // Match patterns like "Godot Engine v4.6.stable" or "4.6.1.stable"
-  const match = versionOutput.match(/v?(\d+)\.(\d+)(?:\.(\d+))?(?:[.\s-]+([^\s.-]\S*))?/)
+  const trimmed = versionOutput.trim()
+  // Match patterns like "Godot Engine v4.6.stable", "4.6.1.stable", or filenames like "Godot_v4.3-stable..."
+  // Anchored to prevent partial matches that could be exploited.
+  // Supports: "Godot Engine v4.2", "Godot v4.2", "v4.2", "4.2", "Godot_v4.2..."
+  const regex = /^(?:Godot(?: Engine)? v?|Godot_v|v)?(\d+)\.(\d+)(?:\.(\d+))?(?:[.\s-]+([^\s.-]\S*))?$/i
+  const match = trimmed.match(regex)
   if (!match) return null
 
   return {
@@ -29,7 +33,7 @@ export function parseGodotVersion(versionOutput: string): GodotVersion | null {
     minor: Number.parseInt(match[2], 10),
     patch: match[3] ? Number.parseInt(match[3], 10) : 0,
     label: match[4]?.replace(/\.$/, '') || 'stable',
-    raw: versionOutput.trim(),
+    raw: trimmed,
   }
 }
 
@@ -59,10 +63,12 @@ export function tryGetVersion(binaryPath: string): GodotVersion | null {
 }
 
 /**
- * Check if a binary path exists and is executable
+ * Check if a binary path exists, is a regular file, and is executable
  */
 export function isExecutable(filePath: string): boolean {
   try {
+    const stats = statSync(filePath)
+    if (!stats.isFile()) return false
     accessSync(filePath, constants.X_OK)
     return true
   } catch {
