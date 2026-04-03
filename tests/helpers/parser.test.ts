@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { parseCommaList } from '../../src/tools/helpers/parser.js'
 
 describe('parseCommaList', () => {
