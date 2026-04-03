@@ -12,6 +12,7 @@
  */
 
 import { readFile } from 'node:fs/promises'
+import { parseCommaList } from './parser.js'
 
 // Pre-compiled regular expressions for parsing scene sections
 const rxGdSceneFormat = /format=(\d+)/
@@ -181,10 +182,7 @@ export function parseSceneContent(content: string): ParsedScene {
                 instance: instanceMatch?.[1],
                 properties: {},
                 groups: groupsMatch
-                  ? groupsMatch[1]
-                      .split(',')
-                      .map((g) => g.trim().replace(/"/g, ''))
-                      .filter(Boolean)
+                  ? parseCommaList(groupsMatch[1], { removeQuotes: true, filterEmpty: true })
                   : undefined,
               }
             }
