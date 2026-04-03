@@ -29,63 +29,14 @@ mcp-name: io.github.n24q02m/better-godot-mcp
 - **GDScript CRUD** -- create, read, write, and attach scripts in a single call
 - **Tiered token optimization** -- compressed descriptions + on-demand `help` tool
 
-## Quick Start
+## Setup
 
-### Claude Code Plugin (Recommended)
+**With AI Agent** -- copy and send this to your AI agent:
 
-Via marketplace (includes skills: /build-scene, /debug-issue, /add-mechanic):
+> Please set up @n24q02m/better-godot-mcp for me. Follow this guide:
+> https://raw.githubusercontent.com/n24q02m/better-godot-mcp/main/docs/setup-with-agent.md
 
-```bash
-/plugin marketplace add n24q02m/claude-plugins
-/plugin install better-godot-mcp@n24q02m-plugins
-```
-
-
-
-### Codex CLI
-
-Add to `~/.codex/config.toml`:
-
-```toml
-[mcp_servers.better-godot-mcp]
-command = "npx"
-args = ["-y", "@n24q02m/better-godot-mcp"]
-```
-
-### MCP Server
-
-#### Option 1: npx
-
-```jsonc
-{
-  "mcpServers": {
-    "better-godot": {
-      "command": "npx",
-      "args": ["-y", "@n24q02m/better-godot-mcp@latest"]
-    }
-  }
-}
-```
-
-Other runners: `bun x`, `pnpm dlx`, `yarn dlx` also work.
-
-#### Option 2: Docker
-
-```jsonc
-{
-  "mcpServers": {
-    "better-godot": {
-      "command": "docker",
-      "args": [
-        "run", "-i", "--rm",
-        "n24q02m/better-godot-mcp:latest"
-      ]
-    }
-  }
-}
-```
-
-> **Note:** Project path is passed via tool parameters (`project_path`), not environment variables. In Docker mode, mount your project directory.
+**Manual Setup** -- follow [docs/setup-manual.md](docs/setup-manual.md)
 
 ## Tools
 
