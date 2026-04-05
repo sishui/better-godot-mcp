@@ -295,17 +295,19 @@ describe('detector', () => {
         throw new Error('not found')
       })
 
-      vi.mocked(existsSync).mockImplementation((path) => path === 'C:\\Program Files\\Godot\\godot.exe')
+      vi.mocked(existsSync).mockImplementation(
+        (path) => path.replace(/\\/g, '/') === 'C:/Program Files/Godot/godot.exe',
+      )
 
       vi.mocked(execFileSync).mockImplementation((cmd) => {
-        if (cmd === 'C:\\Program Files\\Godot\\godot.exe') return 'Godot Engine v4.3.stable.official'
+        if (cmd.replace(/\\/g, '/') === 'C:/Program Files/Godot/godot.exe') return 'Godot Engine v4.3.stable.official'
         throw new Error('cmd not found')
       })
 
       const result = detectGodot()
 
       expect(result).not.toBeNull()
-      expect(result?.path).toBe('C:\\Program Files\\Godot\\godot.exe')
+      expect(result?.path?.replace(/\\/g, '/')).toBe('C:/Program Files/Godot/godot.exe')
       expect(result?.source).toBe('system')
     })
 
@@ -323,13 +325,13 @@ describe('detector', () => {
       })
 
       vi.mocked(existsSync).mockImplementation((path) => {
-        if (path === packagesDir) return true
+        if (path.replace(/\\/g, '/') === packagesDir.replace(/\\/g, '/')) return true
         if (typeof path === 'string' && path.includes('Godot_v4.3-stable_win64.exe')) return true
         return false
       })
 
       vi.mocked(readdirSync).mockImplementation(((path: PathLike, _options?: unknown) => {
-        if (path === packagesDir) {
+        if (path.replace(/\\/g, '/') === packagesDir.replace(/\\/g, '/')) {
           return [
             {
               isDirectory: () => true,
@@ -337,7 +339,7 @@ describe('detector', () => {
             } as Dirent,
           ]
         }
-        if (path === pkgDir) {
+        if (path.replace(/\\/g, '/') === pkgDir.replace(/\\/g, '/')) {
           return ['Godot_v4.3-stable_win64.exe', 'Godot_v4.3-stable_win64_console.exe']
         }
         return []
