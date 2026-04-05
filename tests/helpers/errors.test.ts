@@ -205,6 +205,10 @@ describe('errors', () => {
       // 0.5: (2 * 2) / (4 + 4) = 0.5. Should match.
       expect(findClosestMatch('12345', ['123xy'])).toBe('123xy')
     })
+
+    it('should handle cases with zero bigrams (single char strings) in fuzzy match', () => {
+      expect(findClosestMatch('a', ['b'])).toBeNull()
+    })
   })
 
   // ==========================================
