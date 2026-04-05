@@ -3,16 +3,11 @@
  */
 
 import { execFileSync } from 'node:child_process'
-import { accessSync, existsSync, readdirSync, statSync } from 'node:fs'
 import type { Dirent, PathLike } from 'node:fs'
+import { accessSync, existsSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  detectGodot,
-  isExecutable,
-  isVersionSupported,
-  parseGodotVersion,
-} from '../../src/godot/detector.js'
+import { detectGodot, isExecutable, isVersionSupported, parseGodotVersion } from '../../src/godot/detector.js'
 
 vi.mock('node:child_process')
 vi.mock('node:fs')
@@ -28,7 +23,7 @@ describe('detector', () => {
       expect(v?.major).toBe(4)
       expect(v?.minor).toBe(3)
       expect(v?.patch).toBe(0)
-      expect(v?.label).toBe('stable.official')
+      expect(v?.label).toBe('stable')
     })
 
     it('should parse version with patch number', () => {
@@ -67,7 +62,7 @@ describe('detector', () => {
       expect(v).not.toBeNull()
       expect(v?.major).toBe(4)
       expect(v?.minor).toBe(3)
-      expect(v?.label).toBe('stable.mono.official')
+      expect(v?.label).toBe('stable.mono')
     })
 
     it('should return null for invalid string', () => {
@@ -297,13 +292,14 @@ describe('detector', () => {
     it('should check common Windows paths', () => {
       delete process.env.GODOT_PATH
       Object.defineProperty(process, 'platform', { value: 'win32' })
-      process.env.ProgramFiles = 'C:\\Program Files'
+      const programFiles = 'C:\\Program Files'
+      process.env.ProgramFiles = programFiles
 
       vi.mocked(execFileSync).mockImplementation((_cmd) => {
         throw new Error('not found')
       })
 
-      const expectedPath = join(process.env.ProgramFiles!, 'Godot', 'godot.exe')
+      const expectedPath = join(programFiles, 'Godot', 'godot.exe')
       vi.mocked(existsSync).mockImplementation((path) => path === expectedPath)
 
       vi.mocked(execFileSync).mockImplementation((cmd) => {
@@ -321,9 +317,10 @@ describe('detector', () => {
     it('should detect WinGet packages on Windows', () => {
       delete process.env.GODOT_PATH
       Object.defineProperty(process, 'platform', { value: 'win32' })
-      process.env.LOCALAPPDATA = 'C:\\Users\\Test\\AppData\\Local'
+      const localAppData = 'C:\\Users\\Test\\AppData\\Local'
+      process.env.LOCALAPPDATA = localAppData
 
-      const packagesDir = join(process.env.LOCALAPPDATA!, 'Microsoft', 'WinGet', 'Packages')
+      const packagesDir = join(localAppData, 'Microsoft', 'WinGet', 'Packages')
       const pkgDir = join(packagesDir, 'GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe')
       const exeName = 'Godot_v4.3-stable_win64.exe'
       const fullExePath = join(pkgDir, exeName)
