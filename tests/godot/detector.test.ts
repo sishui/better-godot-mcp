@@ -290,21 +290,21 @@ describe('detector', () => {
       delete process.env.GODOT_PATH
       Object.defineProperty(process, 'platform', { value: 'win32' })
       process.env.ProgramFiles = 'C:\\Program Files'
-      const expectedPath = require('node:path').join('C:', 'Program Files', 'Godot', 'godot.exe')
+
+      // We must construct the path the exact same way the source code does
+      // so it matches on any runner platform (Linux, Mac, Windows)
+      const expectedPath = require('node:path').join(process.env.ProgramFiles, 'Godot', 'godot.exe')
 
       vi.mocked(execFileSync).mockImplementation((_cmd) => {
         throw new Error('not found')
       })
 
       // We need existsSync and statSync since the system check might call both depending on flow
-      vi.mocked(existsSync).mockImplementation(
-        (path) => path === expectedPath || path === 'C:\\Program Files\\Godot\\godot.exe',
-      )
+      vi.mocked(existsSync).mockImplementation((path) => path === expectedPath)
 
       // The isExecutable check needs statSync and accessSync to pass for the exact host path
       vi.mocked(statSync).mockImplementation((path) => {
-        if (path === expectedPath || path === 'C:\\Program Files\\Godot\\godot.exe')
-          return { isFile: () => true } as unknown as import('node:fs').Stats
+        if (path === expectedPath) return { isFile: () => true } as unknown as import('node:fs').Stats
         throw new Error('ENOENT')
       })
 
