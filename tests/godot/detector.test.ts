@@ -290,33 +290,46 @@ describe('detector', () => {
       delete process.env.GODOT_PATH
       Object.defineProperty(process, 'platform', { value: 'win32' })
       process.env.ProgramFiles = 'C:\\Program Files'
+      const expectedPath = require('node:path').join('C:', 'Program Files', 'Godot', 'godot.exe')
 
       vi.mocked(execFileSync).mockImplementation((_cmd) => {
         throw new Error('not found')
       })
 
-      vi.mocked(existsSync).mockImplementation((path) => path === 'C:\\Program Files\\Godot\\godot.exe')
+      // We need existsSync and statSync since the system check might call both depending on flow
+      vi.mocked(existsSync).mockImplementation(
+        (path) => path === expectedPath || path === 'C:\\Program Files\\Godot\\godot.exe',
+      )
+
+      // The isExecutable check needs statSync and accessSync to pass for the exact host path
+      vi.mocked(statSync).mockImplementation((path) => {
+        if (path === expectedPath || path === 'C:\\Program Files\\Godot\\godot.exe')
+          return { isFile: () => true } as unknown as import('node:fs').Stats
+        throw new Error('ENOENT')
+      })
 
       vi.mocked(execFileSync).mockImplementation((cmd) => {
-        if (cmd === 'C:\\Program Files\\Godot\\godot.exe') return 'Godot Engine v4.3.stable.official'
+        if (cmd === expectedPath) return 'Godot Engine v4.3.stable.official'
         throw new Error('cmd not found')
       })
 
       const result = detectGodot()
 
       expect(result).not.toBeNull()
-      expect(result?.path).toBe('C:\\Program Files\\Godot\\godot.exe')
+      expect(result?.path).toBe(expectedPath)
       expect(result?.source).toBe('system')
     })
 
     it('should detect WinGet packages on Windows', () => {
       delete process.env.GODOT_PATH
       Object.defineProperty(process, 'platform', { value: 'win32' })
-      process.env.LOCALAPPDATA = 'C:\\Users\\Test\\AppData\\Local'
+      const localAppData = require('node:path').join('C:', 'Users', 'Test', 'AppData', 'Local')
+      process.env.LOCALAPPDATA = localAppData
 
-      const packagesDir = 'C:\\Users\\Test\\AppData\\Local\\Microsoft\\WinGet\\Packages'
-      const pkgDir =
-        'C:\\Users\\Test\\AppData\\Local\\Microsoft\\WinGet\\Packages\\GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe'
+      const packagesDir = require('node:path').join(localAppData, 'Microsoft', 'WinGet', 'Packages')
+      const pkgDirName = 'GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe'
+      const pkgDir = require('node:path').join(packagesDir, pkgDirName)
+      const expectedExe = require('node:path').join(pkgDir, 'Godot_v4.3-stable_win64.exe')
 
       vi.mocked(execFileSync).mockImplementation(() => {
         throw new Error('not found')
@@ -324,8 +337,13 @@ describe('detector', () => {
 
       vi.mocked(existsSync).mockImplementation((path) => {
         if (path === packagesDir) return true
-        if (typeof path === 'string' && path.includes('Godot_v4.3-stable_win64.exe')) return true
         return false
+      })
+
+      // Make sure the binary is marked as executable
+      vi.mocked(statSync).mockImplementation((path) => {
+        if (path === expectedExe) return { isFile: () => true } as unknown as import('node:fs').Stats
+        throw new Error('ENOENT')
       })
 
       vi.mocked(readdirSync).mockImplementation(((path: PathLike, _options?: unknown) => {
@@ -333,7 +351,7 @@ describe('detector', () => {
           return [
             {
               isDirectory: () => true,
-              name: 'GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe',
+              name: pkgDirName,
             } as Dirent,
           ]
         }
@@ -344,15 +362,14 @@ describe('detector', () => {
       }) as typeof readdirSync)
 
       vi.mocked(execFileSync).mockImplementation((cmd) => {
-        if (typeof cmd === 'string' && cmd.includes('Godot_v4.3-stable_win64.exe'))
-          return 'Godot Engine v4.3.stable.official'
+        if (cmd === expectedExe) return 'Godot Engine v4.3.stable.official'
         throw new Error('cmd not found')
       })
 
       const result = detectGodot()
 
       expect(result).not.toBeNull()
-      expect(result?.path).toContain('Godot_v4.3-stable_win64.exe')
+      expect(result?.path).toBe(expectedExe)
       expect(result?.source).toBe('system')
     })
 
