@@ -176,14 +176,7 @@ export function toGodotValue(value: unknown): string {
   if (typeof value === 'string') return `"${value}"`
 
   if (Array.isArray(value)) {
-    // OPTIMIZATION: Avoid intermediate array allocation from .map().join()
-    let result = '['
-    for (let i = 0; i < value.length; i++) {
-      if (i > 0) result += ', '
-      result += toGodotValue(value[i])
-    }
-    result += ']'
-    return result
+    return `[${value.map(toGodotValue).join(', ')}]`
   }
 
   if (typeof value === 'object' && value !== null) {

@@ -238,15 +238,10 @@ export async function handleInputMap(action: string, args: Record<string, unknow
       const content = await readFile(configPath, 'utf-8')
       const actions = parseInputActions(content)
 
-      // OPTIMIZATION: Use for...of loop instead of Array.from(actions.entries()).map()
-      // to avoid creating intermediate arrays for each map entry and the map itself
-      const actionList: Array<{ name: string; eventCount: number }> = []
-      for (const [name, events] of actions) {
-        actionList.push({
-          name,
-          eventCount: events.length,
-        })
-      }
+      const actionList = Array.from(actions.entries()).map(([name, events]) => ({
+        name,
+        eventCount: events.length,
+      }))
 
       return formatJSON({ count: actionList.length, actions: actionList })
     }
