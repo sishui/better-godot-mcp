@@ -122,7 +122,19 @@ describe('detector', () => {
     it('should return null for whitespace only', () => {
       expect(parseGodotVersion('  \n\t  ')).toBeNull()
     })
+
+    it('should reject common non-Godot version strings', () => {
+      expect(parseGodotVersion('Python 3.10.12')).toBeNull()
+      expect(parseGodotVersion('rm (GNU coreutils) 9.4')).toBeNull()
+      expect(parseGodotVersion('git version 2.43.0')).toBeNull()
+      expect(parseGodotVersion('node v20.10.0')).toBeNull()
+    })
   })
+
+    it("should reject versions with unsupported major numbers", () => {
+      expect(parseGodotVersion("v2.0.stable")).toBeNull();
+      expect(parseGodotVersion("v7.0.stable")).toBeNull();
+    });
 
   // ==========================================
   // isVersionSupported

@@ -20,16 +20,33 @@ const MIN_VERSION = { major: 4, minor: 1 }
  * Parse Godot version string (e.g., "Godot Engine v4.6.stable.official")
  */
 export function parseGodotVersion(versionOutput: string): GodotVersion | null {
-  // Match patterns like "Godot Engine v4.6.stable" or "4.6.1.stable"
-  const match = versionOutput.match(/v?(\d+)\.(\d+)(?:\.(\d+))?(?:[.\s-]+([^\s.-]\S*))?/)
+  if (!versionOutput) return null
+
+  // Godot --version output is usually a single line.
+  // We trim and take the first line to prevent multi-line injection attempts.
+  const firstLine = versionOutput.trim().split('\n')[0].trim()
+
+  // Match patterns like "Godot Engine v4.6.stable", "4.6.1.stable", or "Godot_v4.3..."
+  // Anchored to the start and end of the line for security.
+  // We allow an optional Godot-specific prefix to confirm it's actually Godot.
+  const match = firstLine.match(
+    /^(?:Godot\s+Engine\s+v|Godot\s+v|Godot_v|v)?(\d+)\.(\d+)(?:\.(\d+))?(?:[.\s-]([^\s.-]\S*))?$/i,
+  )
   if (!match) return null
 
+  const major = Number.parseInt(match[1], 10)
+  const minor = Number.parseInt(match[2], 10)
+
+  // Safety check: Godot major versions are currently 3, 4, or 5.
+  // This helps reject other tools that might use a similar version format (like Node.js v20)
+  if (major < 3 || major > 6) return null
+
   return {
-    major: Number.parseInt(match[1], 10),
-    minor: Number.parseInt(match[2], 10),
+    major,
+    minor,
     patch: match[3] ? Number.parseInt(match[3], 10) : 0,
     label: match[4]?.replace(/\.$/, '') || 'stable',
-    raw: versionOutput.trim(),
+    raw: firstLine,
   }
 }
 
