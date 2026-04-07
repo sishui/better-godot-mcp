@@ -36,6 +36,10 @@ vi.mock('../src/tools/registry.js', () => ({
   registerTools: vi.fn(),
 }))
 
+vi.mock('../src/tools/helpers/paths.js', () => ({
+  pathExists: vi.fn().mockResolvedValue(true),
+}))
+
 // Mock node:fs to test getVersion catch block
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>()
@@ -54,6 +58,11 @@ describe('initServer', () => {
     // Suppress console.error output during tests
     vi.spyOn(console, 'error').mockImplementation(() => {})
     process.env = { ...originalEnv }
+
+    // Default pathExists to true
+    import('../src/tools/helpers/paths.js').then((m) => {
+      vi.mocked(m.pathExists).mockResolvedValue(true)
+    })
   })
 
   afterEach(() => {
@@ -267,6 +276,23 @@ describe('initServer', () => {
         version: '0.0.0',
       }),
       expect.anything(),
+    )
+  })
+
+  it('should handle invalid GODOT_PROJECT_PATH', async () => {
+    const { detectGodot } = await import('../src/godot/detector.js')
+    vi.mocked(detectGodot).mockReturnValue(null)
+
+    const { pathExists } = await import('../src/tools/helpers/paths.js')
+    vi.mocked(pathExists).mockResolvedValue(false)
+
+    process.env.GODOT_PROJECT_PATH = '/invalid/path'
+
+    const { initServer } = await import('../src/init-server.js')
+    await expect(initServer()).rejects.toThrow('Invalid GODOT_PROJECT_PATH')
+    expect(console.error).toHaveBeenCalledWith(
+      'Failed to initialize server:',
+      expect.objectContaining({ code: 'PROJECT_NOT_FOUND' }),
     )
   })
 })
