@@ -2,18 +2,47 @@
  * Tests for project.godot settings parser and manipulation
  */
 
+import { readFile } from 'node:fs/promises'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   getSetting,
+  parseProjectSettingsAsync,
   parseProjectSettingsContent,
   setSettingInContent,
 } from '../../src/tools/helpers/project-settings.js'
 import { SAMPLE_PROJECT_GODOT } from '../fixtures.js'
 
+vi.mock('node:fs/promises', () => ({
+  readFile: vi.fn(),
+}))
+
 describe('project-settings', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
+
+  // ==========================================
+  // parseProjectSettingsAsync
+  // ==========================================
+  describe('parseProjectSettingsAsync', () => {
+    it('should read file and parse content', async () => {
+      vi.mocked(readFile).mockResolvedValue(SAMPLE_PROJECT_GODOT)
+
+      const settings = await parseProjectSettingsAsync('project.godot')
+
+      expect(readFile).toHaveBeenCalledWith('project.godot', 'utf-8')
+      expect(settings.sections.has('application')).toBe(true)
+      expect(settings.sections.get('application')?.get('config/name')).toBe('"TestProject"')
+    })
+
+    it('should propagate readFile errors', async () => {
+      const error = new Error('File not found')
+      vi.mocked(readFile).mockRejectedValue(error)
+
+      await expect(parseProjectSettingsAsync('missing.godot')).rejects.toThrow('File not found')
+    })
+  })
+
   // ==========================================
   // parseProjectSettingsContent
   // ==========================================
