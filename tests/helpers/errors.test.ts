@@ -198,6 +198,10 @@ describe('errors', () => {
       expect(findClosestMatch('abcd', ['abce', 'abcf'])).toBe('abce')
     })
 
+    it('should handle cases where both strings have no bigrams and no prefix match', () => {
+      expect(findClosestMatch('1', ['2'])).toBeNull()
+    })
+
     it('should respect the 0.4 similarity threshold', () => {
       // 0.4 exactly: (2 * 2) / (5 + 5) = 0.4. Should NOT match (> 0.4 required).
       expect(findClosestMatch('123456', ['123xyz'])).toBeNull()
