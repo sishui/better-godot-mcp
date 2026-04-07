@@ -259,5 +259,44 @@ describe('errors', () => {
         expect(error.message.length).toBeLessThan(250)
       }
     })
+
+    it('should not truncate if action is exactly 100 characters', () => {
+      const longAction = 'a'.repeat(100)
+      try {
+        throwUnknownAction(longAction, ['create', 'delete'])
+      } catch (err) {
+        const error = err as GodotMCPError
+        expect(error.message).toContain(`Unknown action: ${longAction}.`)
+        expect(error.message).not.toContain('...')
+      }
+    })
+
+    it('should truncate if action is 101 characters', () => {
+      const longAction = 'a'.repeat(101)
+      try {
+        throwUnknownAction(longAction, ['create', 'delete'])
+      } catch (err) {
+        const error = err as GodotMCPError
+        expect(error.message).toContain(`Unknown action: ${'a'.repeat(100)}...`)
+      }
+    })
+
+    it('should handle empty action string', () => {
+      try {
+        throwUnknownAction('', ['create', 'delete'])
+      } catch (err) {
+        const error = err as GodotMCPError
+        expect(error.message).toBe('Unknown action: .')
+      }
+    })
+
+    it('should handle empty validActions list', () => {
+      try {
+        throwUnknownAction('create', [])
+      } catch (err) {
+        const error = err as GodotMCPError
+        expect(error.suggestion).toBe('Valid actions: . Use help tool for full docs.')
+      }
+    })
   })
 })
