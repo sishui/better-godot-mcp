@@ -131,10 +131,10 @@ describe('detector', () => {
     })
   })
 
-    it("should reject versions with unsupported major numbers", () => {
-      expect(parseGodotVersion("v2.0.stable")).toBeNull();
-      expect(parseGodotVersion("v7.0.stable")).toBeNull();
-    });
+  it('should reject versions with unsupported major numbers', () => {
+    expect(parseGodotVersion('v2.0.stable')).toBeNull()
+    expect(parseGodotVersion('v7.0.stable')).toBeNull()
+  })
 
   // ==========================================
   // isVersionSupported
