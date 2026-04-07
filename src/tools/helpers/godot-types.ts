@@ -149,8 +149,8 @@ export function parseGodotValue(expr: string, _depth = 0): unknown {
 
   // Array
   if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
-    const inner = trimmed.slice(1, -1)
-    if (!inner.trim()) return []
+    const inner = trimmed.slice(1, -1).trim()
+    if (!inner) return []
 
     const results: unknown[] = []
     let bracketLevel = 0
@@ -178,16 +178,9 @@ export function parseGodotValue(expr: string, _depth = 0): unknown {
       else if (char === '(') parenLevel++
       else if (char === ')') parenLevel--
       else if (char === ',' && bracketLevel === 0 && parenLevel === 0) {
-        // Manually trim whitespace within indices
-        let left = start
-        while (left < i && inner.charCodeAt(left) <= 32) left++
-        let right = i - 1
-        while (right >= left && inner.charCodeAt(right) <= 32) right--
-
-        if (left <= right) {
-          results.push(parseGodotValue(inner.slice(left, right + 1), _depth + 1))
-        } else if (results.length > 0 || i < inner.length) {
-          results.push(parseGodotValue('', _depth + 1))
+        const item = inner.slice(start, i).trim()
+        if (item || results.length > 0 || i < inner.length) {
+          results.push(parseGodotValue(item, _depth + 1))
         }
         start = i + 1
       }
@@ -210,13 +203,7 @@ export function toGodotValue(value: unknown): string {
   if (typeof value === 'string') return `"${value}"`
 
   if (Array.isArray(value)) {
-    if (value.length === 0) return '[]'
-    let result = '['
-    for (let i = 0; i < value.length; i++) {
-      if (i > 0) result += ', '
-      result += toGodotValue(value[i])
-    }
-    return `${result}]`
+    return `[${value.map(toGodotValue).join(', ')}]`
   }
 
   if (typeof value === 'object' && value !== null) {
