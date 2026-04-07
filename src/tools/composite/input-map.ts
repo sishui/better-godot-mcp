@@ -9,6 +9,7 @@ import type { GodotConfig } from '../../godot/types.js'
 import { formatJSON, formatSuccess, GodotMCPError, throwUnknownAction } from '../helpers/errors.js'
 import { pathExists, safeResolve } from '../helpers/paths.js'
 import { escapeRegExp } from '../helpers/scene-parser.js'
+import { parseCommaSeparatedList } from '../helpers/strings.js'
 
 /**
  * Godot 4.x Key enum numeric values (@GlobalScope.Key)
@@ -138,25 +139,6 @@ function resolveMouseCode(value: string): number {
 /**
  * Fast-path parser for comma-separated lists, avoiding split/map/filter allocations.
  */
-function parseEventsList(str: string): string[] {
-  if (!str) return []
-  const results: string[] = []
-  let start = 0
-  const len = str.length
-  while (start < len) {
-    let end = str.indexOf(',', start)
-    if (end === -1) end = len
-    let i = start
-    while (i < end && str.charCodeAt(i) <= 32) i++
-    let j = end - 1
-    while (j >= i && str.charCodeAt(j) <= 32) j--
-    if (i <= j) {
-      results.push(str.slice(i, j + 1))
-    }
-    start = end + 1
-  }
-  return results
-}
 
 async function getProjectGodotPath(projectPath: string | null | undefined, baseDir: string): Promise<string> {
   if (!projectPath) throw new GodotMCPError('No project path specified', 'INVALID_ARGS', 'Provide project_path.')
@@ -184,7 +166,7 @@ function parseInputActions(content: string): Map<string, string[]> {
       if (trimmed.endsWith('}')) {
         // End of multi-line action
         const eventsMatch = currentActionAccumulator.match(/"events":\s*\[([^\]]*)\]/)
-        const events = eventsMatch ? parseEventsList(eventsMatch[1]) : []
+        const events = eventsMatch ? parseCommaSeparatedList(eventsMatch[1]) : []
         actions.set(currentActionName, events)
         currentActionName = null
         currentActionAccumulator = ''
@@ -209,7 +191,7 @@ function parseInputActions(content: string): Map<string, string[]> {
       if (match) {
         const actionName = match[1]
         const eventsMatch = match[2].match(/"events":\s*\[([^\]]*)\]/)
-        const events = eventsMatch ? parseEventsList(eventsMatch[1]) : []
+        const events = eventsMatch ? parseCommaSeparatedList(eventsMatch[1]) : []
         actions.set(actionName, events)
       } else {
         // Multi-line format start: action_name={
@@ -238,10 +220,13 @@ export async function handleInputMap(action: string, args: Record<string, unknow
       const content = await readFile(configPath, 'utf-8')
       const actions = parseInputActions(content)
 
-      const actionList = Array.from(actions.entries()).map(([name, events]) => ({
-        name,
-        eventCount: events.length,
-      }))
+      const actionList = []
+      for (const [name, events] of actions) {
+        actionList.push({
+          name,
+          eventCount: events.length,
+        })
+      }
 
       return formatJSON({ count: actionList.length, actions: actionList })
     }
