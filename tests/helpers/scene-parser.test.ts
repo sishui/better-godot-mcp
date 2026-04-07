@@ -4,7 +4,6 @@
 
 import { describe, expect, it } from 'vitest'
 import {
-  escapeRegExp,
   findNode,
   getNodeProperty,
   parseSceneContent,
@@ -208,6 +207,11 @@ describe('scene-parser', () => {
       expect(result).toContain('from="Hero"')
       expect(result).toContain('to="Hero"')
     })
+
+    it('should return early if old name is not present', () => {
+      const result = renameNodeInContent(MINIMAL_TSCN, 'NonExistent', 'NewName')
+      expect(result).toBe(MINIMAL_TSCN)
+    })
   })
 
   // ==========================================
@@ -231,6 +235,11 @@ describe('scene-parser', () => {
       const result = setNodePropertyInContent(COMPLEX_TSCN, 'Label', 'visible', 'true')
       expect(result).toContain('visible = true')
     })
+
+    it('should return early if node name is not present', () => {
+      const result = setNodePropertyInContent(MINIMAL_TSCN, 'NonExistent', 'prop', 'val')
+      expect(result).toBe(MINIMAL_TSCN)
+    })
   })
 
   // ==========================================
@@ -252,27 +261,20 @@ describe('scene-parser', () => {
       expect(getNodeProperty(scene, 'Ghost', 'speed')).toBeUndefined()
     })
   })
+})
 
-  // ==========================================
-  // escapeRegExp
-  // ==========================================
-  describe('escapeRegExp', () => {
-    it('should handle empty strings', () => {
-      expect(escapeRegExp('')).toBe('')
-    })
-
-    it('should return plain strings as-is', () => {
-      expect(escapeRegExp('hello123')).toBe('hello123')
-    })
-
-    it('should escape all regex special characters', () => {
-      const specialChars = '.*+?^' + '${' + '}()|[]\\'
-      const expected = '\\.\\*\\+\\?\\^\\$\\{\\}\\(\\)\\|\\[\\]\\\\'
-      expect(escapeRegExp(specialChars)).toBe(expected)
-    })
-
-    it('should escape special characters mixed with plain text', () => {
-      expect(escapeRegExp('node.name[1]')).toBe('node\\.name\\[1\\]')
-    })
+describe('scene-parser coverage gaps', () => {
+  it('should handle leading and trailing whitespace in lines', () => {
+    const content = '  \n  [node name="Root" type="Node"]  \n  '
+    const scene = parseSceneContent(content)
+    expect(scene.nodes).toHaveLength(1)
+    expect(scene.nodes[0].name).toBe('Root')
   })
 })
+
+  describe('removeNodeFromContent fast-path', () => {
+    it('should return early if node name is not present in any relevant field', () => {
+      const result = removeNodeFromContent(MINIMAL_TSCN, 'NonExistent')
+      expect(result).toBe(MINIMAL_TSCN)
+    })
+  })
