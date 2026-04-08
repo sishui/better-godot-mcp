@@ -2,6 +2,7 @@
  * Tests for editor.ts - process checking branches
  */
 
+import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest'
 import type { GodotConfig } from '../../src/godot/types.js'
 import { handleEditor } from '../../src/tools/composite/editor.js'
@@ -17,7 +18,7 @@ describe('editor - process checking', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    config = makeConfig({ godotPath: '/usr/bin/godot' })
+    config = makeConfig({ godotPath: join(process.platform === 'win32' ? 'C:' : '/', 'usr', 'bin', 'godot') })
 
     // Default spy behavior
     processKillSpy = vi.spyOn(process, 'kill').mockImplementation((pid, signal) => {

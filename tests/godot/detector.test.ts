@@ -290,9 +290,10 @@ describe('detector', () => {
     it('should check common Windows paths', () => {
       delete process.env.GODOT_PATH
       Object.defineProperty(process, 'platform', { value: 'win32' })
-      process.env.ProgramFiles = 'C:\\Program Files'
+      const mockProgramFiles = join('C:', 'Program Files')
+      process.env.ProgramFiles = mockProgramFiles
 
-      const expectedPath = join('C:\\Program Files', 'Godot', 'godot.exe')
+      const expectedPath = join(mockProgramFiles, 'Godot', 'godot.exe')
 
       vi.mocked(execFileSync).mockImplementation((_cmd) => {
         throw new Error('not found')
@@ -315,9 +316,10 @@ describe('detector', () => {
     it('should detect WinGet packages on Windows', () => {
       delete process.env.GODOT_PATH
       Object.defineProperty(process, 'platform', { value: 'win32' })
-      process.env.LOCALAPPDATA = 'C:\\Users\\Test\\AppData\\Local'
+      const mockLocalAppData = join('C:', 'Users', 'Test', 'AppData', 'Local')
+      process.env.LOCALAPPDATA = mockLocalAppData
 
-      const packagesDir = join('C:\\Users\\Test\\AppData\\Local', 'Microsoft', 'WinGet', 'Packages')
+      const packagesDir = join(mockLocalAppData, 'Microsoft', 'WinGet', 'Packages')
       const pkgDir = join(packagesDir, 'GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe')
 
       vi.mocked(execFileSync).mockImplementation(() => {
