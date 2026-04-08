@@ -136,10 +136,6 @@ function resolveMouseCode(value: string): number {
   )
 }
 
-/**
- * Fast-path parser for comma-separated lists, avoiding split/map/filter allocations.
- */
-
 async function getProjectGodotPath(projectPath: string | null | undefined, baseDir: string): Promise<string> {
   if (!projectPath) throw new GodotMCPError('No project path specified', 'INVALID_ARGS', 'Provide project_path.')
   const configPath = join(safeResolve(baseDir, projectPath), 'project.godot')
