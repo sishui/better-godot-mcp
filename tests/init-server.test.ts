@@ -3,6 +3,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { pathExists } from '../src/tools/helpers/paths.js'
 
 const mockServerConstructor = vi.fn()
 const mockConnect = vi.fn().mockResolvedValue(undefined)
@@ -61,9 +62,7 @@ describe('initServer', () => {
     process.env = { ...originalEnv }
 
     // Default pathExists to true
-    import('../src/tools/helpers/paths.js').then((m) => {
-      vi.mocked(m.pathExists).mockResolvedValue(true)
-    })
+    vi.mocked(pathExists).mockResolvedValue(true)
   })
 
   afterEach(() => {
@@ -140,7 +139,6 @@ describe('initServer', () => {
 
   it('should read GODOT_PROJECT_PATH from environment and validate it', async () => {
     const { detectGodot } = await import('../src/godot/detector.js')
-    const { pathExists } = await import('../src/tools/helpers/paths.js')
     vi.mocked(detectGodot).mockReturnValue(null)
     vi.mocked(pathExists).mockResolvedValue(true)
     process.env.GODOT_PROJECT_PATH = '/path/to/my/project'
@@ -160,7 +158,6 @@ describe('initServer', () => {
 
   it('should throw error if GODOT_PROJECT_PATH is invalid', async () => {
     const { detectGodot } = await import('../src/godot/detector.js')
-    const { pathExists } = await import('../src/tools/helpers/paths.js')
     vi.mocked(detectGodot).mockReturnValue(null)
     vi.mocked(pathExists).mockResolvedValue(false)
     process.env.GODOT_PROJECT_PATH = '/invalid/path'
