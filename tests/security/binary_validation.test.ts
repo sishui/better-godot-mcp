@@ -30,7 +30,7 @@ describe('Security: Binary Validation', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     // Default to a regular executable
-    vi.mocked(fs.statSync).mockReturnValue({ isFile: () => true } as unknown as string)
+    vi.mocked(fs.statSync).mockReturnValue({ isFile: () => true } as unknown as fs.Stats)
     vi.mocked(fs.accessSync).mockReturnValue(undefined)
   })
 
