@@ -1,0 +1,32 @@
+<<<<<<< SEARCH
+    it('should check common Windows paths', () => {
+      delete process.env.GODOT_PATH
+      Object.defineProperty(process, 'platform', { value: 'win32' })
+      process.env.ProgramFiles = 'C:\\Program Files'
+
+      const expectedPath = join('C:\\Program Files', 'Godot', 'godot.exe')
+=======
+    it('should check common Windows paths', () => {
+      delete process.env.GODOT_PATH
+      Object.defineProperty(process, 'platform', { value: 'win32' })
+      const programFiles = join('C:', 'Program Files')
+      process.env.ProgramFiles = programFiles
+
+      const expectedPath = join(programFiles, 'Godot', 'godot.exe')
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    it('should detect WinGet packages on Windows', () => {
+      delete process.env.GODOT_PATH
+      Object.defineProperty(process, 'platform', { value: 'win32' })
+      process.env.LOCALAPPDATA = 'C:\\Users\\Test\\AppData\\Local'
+
+      const packagesDir = join('C:\\Users\\Test\\AppData\\Local', 'Microsoft', 'WinGet', 'Packages')
+=======
+    it('should detect WinGet packages on Windows', () => {
+      delete process.env.GODOT_PATH
+      Object.defineProperty(process, 'platform', { value: 'win32' })
+      const localAppData = join('C:', 'Users', 'Test', 'AppData', 'Local')
+      process.env.LOCALAPPDATA = localAppData
+
+      const packagesDir = join(localAppData, 'Microsoft', 'WinGet', 'Packages')
+>>>>>>> REPLACE
