@@ -1,4 +1,6 @@
 import * as child_process from 'node:child_process'
+import * as os from 'node:os'
+import * as path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { execGodotAsync, execGodotSync, launchGodotEditor, runGodotProject } from '../../src/godot/headless.js'
 
@@ -21,6 +23,9 @@ vi.mock('node:child_process', async () => {
 })
 
 describe('headless', () => {
+  const mockGodotPath = path.join(os.tmpdir(), 'godot')
+  const mockProjectPath = path.join(os.tmpdir(), 'project')
+
   beforeEach(() => {
     vi.resetAllMocks()
     execFileAsyncMock.mockReset()
@@ -31,25 +36,24 @@ describe('headless', () => {
   // ==========================================
   describe('execGodotSync', () => {
     it('executes Godot with correct arguments using spawnSync', () => {
-      const godotPath = '/usr/bin/godot'
       const args = ['--version']
-      const options = { timeout: 1000, cwd: '/tmp' }
+      const options = { timeout: 1000, cwd: mockProjectPath }
 
       vi.mocked(child_process.spawnSync).mockReturnValue({
-        stdout: '4.2.1',
+        stdout: '4.3.stable',
         stderr: '',
         status: 0,
         output: [],
         pid: 0,
         signal: null,
-      })
+      } as unknown as child_process.SpawnSyncReturns<string>)
 
-      const result = execGodotSync(godotPath, args, options)
+      const result = execGodotSync(mockGodotPath, args, options)
 
       expect(result.success).toBe(true)
-      expect(result.stdout).toBe('4.2.1')
+      expect(result.stdout).toBe('4.3.stable')
       expect(child_process.spawnSync).toHaveBeenCalledWith(
-        godotPath,
+        mockGodotPath,
         args,
         expect.objectContaining({
           timeout: options.timeout,
@@ -67,18 +71,17 @@ describe('headless', () => {
         output: [],
         pid: 0,
         signal: null,
-      })
-      const result = execGodotSync('/usr/bin/godot', ['--version'])
+      } as unknown as child_process.SpawnSyncReturns<string>)
+      const result = execGodotSync(mockGodotPath, ['--version'])
       expect(result.success).toBe(true)
       expect(child_process.spawnSync).toHaveBeenCalledWith(
-        '/usr/bin/godot',
+        mockGodotPath,
         ['--version'],
         expect.objectContaining({ timeout: 30_000 }),
       )
     })
 
     it('should handle execution errors with status', () => {
-      const godotPath = '/usr/bin/godot'
       const args = ['--invalid']
 
       vi.mocked(child_process.spawnSync).mockReturnValue({
@@ -88,9 +91,9 @@ describe('headless', () => {
         output: [],
         pid: 0,
         signal: null,
-      })
+      } as unknown as child_process.SpawnSyncReturns<string>)
 
-      const result = execGodotSync(godotPath, args)
+      const result = execGodotSync(mockGodotPath, args)
 
       expect(result.success).toBe(false)
       expect(result.stderr).toBe('Unknown argument')
@@ -107,8 +110,8 @@ describe('headless', () => {
         output: [],
         pid: 0,
         signal: null,
-      })
-      const result = execGodotSync('/usr/bin/godot', ['--version'])
+      } as unknown as child_process.SpawnSyncReturns<string>)
+      const result = execGodotSync(mockGodotPath, ['--version'])
       expect(result.success).toBe(false)
       expect(result.exitCode).toBe(1)
       expect(result.stderr).toBe('Timeout')
@@ -118,13 +121,13 @@ describe('headless', () => {
       vi.mocked(child_process.spawnSync).mockReturnValue({
         error: {} as Error,
         status: null,
-        stdout: null as unknown as string,
-        stderr: null as unknown as string,
+        stdout: null,
+        stderr: null,
         output: [],
         pid: 0,
         signal: null,
-      })
-      const result = execGodotSync('/usr/bin/godot', ['--version'])
+      } as unknown as child_process.SpawnSyncReturns<string>)
+      const result = execGodotSync(mockGodotPath, ['--version'])
       expect(result.success).toBe(false)
       expect(result.exitCode).toBe(1)
       expect(result.stderr).toBe('Unknown error')
@@ -133,21 +136,20 @@ describe('headless', () => {
 
     it('should handle success with null/undefined stdout and stderr', () => {
       vi.mocked(child_process.spawnSync).mockReturnValue({
-        stdout: null as unknown as string,
-        stderr: undefined as unknown as string,
+        stdout: null,
+        stderr: undefined,
         status: 0,
         output: [],
         pid: 0,
         signal: null,
-      })
-      const result = execGodotSync('/usr/bin/godot', ['--version'])
+      } as unknown as child_process.SpawnSyncReturns<string>)
+      const result = execGodotSync(mockGodotPath, ['--version'])
       expect(result.success).toBe(true)
       expect(result.stdout).toBe('')
       expect(result.stderr).toBe('')
     })
 
     it('should use spawnSync to prevent command injection', () => {
-      const godotPath = '/usr/bin/godot'
       const args = ['--headless', '--script', 'test.gd']
 
       vi.mocked(child_process.spawnSync).mockReturnValue({
@@ -157,18 +159,17 @@ describe('headless', () => {
         output: [],
         pid: 0,
         signal: null,
-      })
+      } as unknown as child_process.SpawnSyncReturns<string>)
 
-      const result = execGodotSync(godotPath, args)
+      const result = execGodotSync(mockGodotPath, args)
 
       expect(result.success).toBe(true)
       expect(child_process.spawnSync).toHaveBeenCalledTimes(1)
       expect(child_process.spawn).not.toHaveBeenCalled()
-      expect(child_process.spawnSync).toHaveBeenCalledWith(godotPath, args, expect.any(Object))
+      expect(child_process.spawnSync).toHaveBeenCalledWith(mockGodotPath, args, expect.any(Object))
     })
 
     it('should safely handle malicious arguments', () => {
-      const godotPath = '/usr/bin/godot'
       const maliciousArgs = ['--headless', '--script', 'test.gd', ';', 'ls', '-la']
 
       vi.mocked(child_process.spawnSync).mockReturnValue({
@@ -178,11 +179,11 @@ describe('headless', () => {
         output: [],
         pid: 0,
         signal: null,
-      })
+      } as unknown as child_process.SpawnSyncReturns<string>)
 
-      execGodotSync(godotPath, maliciousArgs)
+      execGodotSync(mockGodotPath, maliciousArgs)
 
-      expect(child_process.spawnSync).toHaveBeenCalledWith(godotPath, maliciousArgs, expect.any(Object))
+      expect(child_process.spawnSync).toHaveBeenCalledWith(mockGodotPath, maliciousArgs, expect.any(Object))
     })
   })
 
@@ -193,7 +194,7 @@ describe('headless', () => {
     it('should return success result with stdout and stderr trimmed', async () => {
       execFileAsyncMock.mockResolvedValue({ stdout: '  output  ', stderr: '  warn  ' })
 
-      const result = await execGodotAsync('/usr/bin/godot', ['--version'])
+      const result = await execGodotAsync(mockGodotPath, ['--version'])
       expect(result.success).toBe(true)
       expect(result.stdout).toBe('output')
       expect(result.stderr).toBe('warn')
@@ -206,7 +207,7 @@ describe('headless', () => {
         stderr: undefined as unknown as string,
       })
 
-      const result = await execGodotAsync('/usr/bin/godot', ['--version'])
+      const result = await execGodotAsync(mockGodotPath, ['--version'])
       expect(result.success).toBe(true)
       expect(result.stdout).toBe('')
       expect(result.stderr).toBe('')
@@ -216,9 +217,9 @@ describe('headless', () => {
     it('should use default timeout of 30_000 when none specified', async () => {
       execFileAsyncMock.mockResolvedValue({ stdout: '', stderr: '' })
 
-      await execGodotAsync('/usr/bin/godot', ['--version'])
+      await execGodotAsync(mockGodotPath, ['--version'])
       expect(execFileAsyncMock).toHaveBeenCalledWith(
-        '/usr/bin/godot',
+        mockGodotPath,
         ['--version'],
         expect.objectContaining({ timeout: 30_000 }),
       )
@@ -228,7 +229,7 @@ describe('headless', () => {
       const error = Object.assign(new Error('fail'), { stdout: '  out  ', stderr: '  err  ', code: 2 })
       execFileAsyncMock.mockRejectedValue(error)
 
-      const result = await execGodotAsync('/usr/bin/godot', ['--version'])
+      const result = await execGodotAsync(mockGodotPath, ['--version'])
       expect(result.success).toBe(false)
       expect(result.stdout).toBe('out')
       expect(result.stderr).toBe('err')
@@ -241,7 +242,7 @@ describe('headless', () => {
       delete error.message
       execFileAsyncMock.mockRejectedValue(error)
 
-      const result = await execGodotAsync('/usr/bin/godot', ['--version'])
+      const result = await execGodotAsync(mockGodotPath, ['--version'])
       expect(result.success).toBe(false)
       expect(result.stdout).toBe('')
       expect(result.stderr).toBe('Unknown error')
@@ -255,11 +256,11 @@ describe('headless', () => {
   describe('runGodotProject', () => {
     it('should spawn Godot with correct arguments', () => {
       const mockChild = { unref: vi.fn(), pid: 42 }
-      vi.mocked(child_process.spawn).mockReturnValue(mockChild as never)
+      vi.mocked(child_process.spawn).mockReturnValue(mockChild as unknown as child_process.ChildProcess)
 
-      const result = runGodotProject('/usr/bin/godot', '/tmp/project')
+      const result = runGodotProject(mockGodotPath, mockProjectPath)
       expect(result.pid).toBe(42)
-      expect(child_process.spawn).toHaveBeenCalledWith('/usr/bin/godot', ['--path', '/tmp/project'], {
+      expect(child_process.spawn).toHaveBeenCalledWith(mockGodotPath, ['--path', mockProjectPath], {
         detached: true,
         stdio: 'ignore',
       })
@@ -273,11 +274,11 @@ describe('headless', () => {
   describe('launchGodotEditor', () => {
     it('should spawn Godot editor with --editor flag', () => {
       const mockChild = { unref: vi.fn(), pid: 99 }
-      vi.mocked(child_process.spawn).mockReturnValue(mockChild as never)
+      vi.mocked(child_process.spawn).mockReturnValue(mockChild as unknown as child_process.ChildProcess)
 
-      const result = launchGodotEditor('/usr/bin/godot', '/tmp/project')
+      const result = launchGodotEditor(mockGodotPath, mockProjectPath)
       expect(result.pid).toBe(99)
-      expect(child_process.spawn).toHaveBeenCalledWith('/usr/bin/godot', ['--editor', '--path', '/tmp/project'], {
+      expect(child_process.spawn).toHaveBeenCalledWith(mockGodotPath, ['--editor', '--path', mockProjectPath], {
         detached: true,
         stdio: 'ignore',
       })
