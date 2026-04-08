@@ -36,9 +36,9 @@ describe('strings helpers', () => {
     })
 
     it('should return an empty array for undefined or null-like values (via type safety check)', () => {
-      // @ts-expect-error
+      // @ts-expect-error - Testing invalid input
       expect(parseCommaSeparatedList(null)).toEqual([])
-      // @ts-expect-error
+      // @ts-expect-error - Testing invalid input
       expect(parseCommaSeparatedList(undefined)).toEqual([])
     })
   })
@@ -53,7 +53,8 @@ describe('strings helpers', () => {
     })
 
     it('should escape all regex special characters', () => {
-      const specialChars = '.*+?^' + '${' + '}()|[]\\'
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: Testing literal regex characters
+      const specialChars = '.*+?^${}()|[]\\'
       const expected = '\\.\\*\\+\\?\\^\\$\\{\\}\\(\\)\\|\\[\\]\\\\'
       expect(escapeRegExp(specialChars)).toBe(expected)
     })
