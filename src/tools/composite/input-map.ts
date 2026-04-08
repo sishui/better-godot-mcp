@@ -190,7 +190,7 @@ function parseInputActions(content: string): Map<string, string[]> {
 
     if (inInputSection) {
       // Single-line format: action_name={...}
-      const match = trimmed.match(/^(\w+)=\{(.+)\}$/)
+      const match = trimmed.match(/^([a-zA-Z0-9_-]+)=\{(.+)\}$/)
       if (match) {
         const actionName = match[1]
         const eventsMatch = match[2].match(/"events":\s*\[([^\]]*)\]/)
@@ -201,7 +201,7 @@ function parseInputActions(content: string): Map<string, string[]> {
         //   "deadzone": 0.2,
         //   "events": [...]
         // }
-        const startMatch = trimmed.match(/^(\w+)=\{(.*)$/)
+        const startMatch = trimmed.match(/^([a-zA-Z0-9_-]+)=\{(.*)$/)
         if (startMatch) {
           currentActionName = startMatch[1]
           currentActionAccumulator = startMatch[2]
