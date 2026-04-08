@@ -345,7 +345,8 @@ describe('detector', () => {
           >
         }
         return [] as unknown as ReturnType<typeof readdirSync>
-      }) as unknown as ReturnType<typeof readdirSync>)
+        // biome-ignore lint/suspicious/noExplicitAny: mock complex overloads
+      }) as any)
 
       vi.mocked(execFileSync).mockImplementation((cmd) => {
         if (typeof cmd === 'string' && cmd.includes('Godot_v4.3-stable_win64.exe'))
@@ -369,9 +370,8 @@ describe('detector', () => {
       vi.mocked(statSync).mockImplementation(() => {
         throw new Error('ENOENT')
       })
-      vi.mocked(readdirSync).mockImplementation(((_path: PathLike, _options?: unknown) => []) as unknown as ReturnType<
-        typeof readdirSync
-      >)
+      // biome-ignore lint/suspicious/noExplicitAny: mock complex overloads
+      vi.mocked(readdirSync).mockImplementation(((_path: PathLike, _options?: unknown) => []) as any)
 
       expect(detectGodot()).toBeNull()
     })
