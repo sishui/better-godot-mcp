@@ -1,6 +1,7 @@
 /**
  * Integration tests for Config tool
  */
+import { join } from 'node:path'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as detector from '../../src/godot/detector.js'
@@ -197,7 +198,7 @@ describe('config', () => {
       vi.mocked(detector.isExecutable).mockReturnValue(true)
       const result = await handleConfig(
         'set',
-        { key: 'godot_path', value: 'C:\\Program Files\\Godot\\godot.exe' },
+        { key: 'godot_path', value: join('C:', 'Program Files', 'Godot', 'godot.exe') },
         config,
       )
       expect(result.content[0].text).toContain('Config updated')
