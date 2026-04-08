@@ -108,14 +108,19 @@ export async function handleProject(action: string, args: Record<string, unknown
       let stoppedCount = 0
       for (const pid of config.activePids) {
         try {
+          // Check if process still exists
+          process.kill(pid, 0)
+
           if (process.platform === 'win32') {
+            // On Windows, taskkill /T /F is more reliable for Godot as it may have child processes
             execFileSync('taskkill', ['/F', '/PID', pid.toString(), '/T'], { stdio: 'pipe' })
           } else {
             process.kill(pid, 'SIGTERM')
           }
           stoppedCount++
-        } catch {
-          // Process might have already terminated
+        } catch (_err) {
+          // Process might have already terminated, or taskkill failed
+          // We ignore these as the goal is to ensure they are stopped
         }
       }
 
