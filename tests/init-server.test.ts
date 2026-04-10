@@ -36,14 +36,12 @@ vi.mock('../src/tools/registry.js', () => ({
   registerTools: vi.fn(),
 }))
 
-// Mock node:fs to test getVersion catch block
-vi.mock('node:fs', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('node:fs')>()
-  return {
-    ...actual,
-    readFileSync: vi.fn(actual.readFileSync),
-  }
-})
+// Mock package.json to control version in tests
+vi.mock('../package.json', () => ({
+  default: {
+    version: '1.2.3',
+  },
+}))
 
 describe('initServer', () => {
   const originalEnv = process.env
@@ -172,7 +170,7 @@ describe('initServer', () => {
     expect(mockServerConstructor).toHaveBeenCalledWith(
       {
         name: 'better-godot-mcp',
-        version: expect.any(String),
+        version: '1.2.3',
       },
       {
         capabilities: {
@@ -230,43 +228,5 @@ describe('initServer', () => {
     const { initServer } = await import('../src/init-server.js')
     await expect(initServer()).rejects.toThrow('Detection failed')
     expect(console.error).toHaveBeenCalledWith('Failed to initialize server:', testError)
-  })
-
-  it('should handle missing version in package.json', async () => {
-    const { readFileSync } = await import('node:fs')
-    vi.mocked(readFileSync).mockReturnValue(JSON.stringify({}))
-
-    const { detectGodot } = await import('../src/godot/detector.js')
-    vi.mocked(detectGodot).mockReturnValue(null)
-
-    const { initServer } = await import('../src/init-server.js')
-    await initServer()
-
-    expect(mockServerConstructor).toHaveBeenCalledWith(
-      expect.objectContaining({
-        version: '0.0.0',
-      }),
-      expect.anything(),
-    )
-  })
-
-  it('should handle errors in getVersion by returning default version', async () => {
-    const { readFileSync } = await import('node:fs')
-    vi.mocked(readFileSync).mockImplementation(() => {
-      throw new Error('File not found')
-    })
-
-    const { detectGodot } = await import('../src/godot/detector.js')
-    vi.mocked(detectGodot).mockReturnValue(null)
-
-    const { initServer } = await import('../src/init-server.js')
-    await initServer()
-
-    expect(mockServerConstructor).toHaveBeenCalledWith(
-      expect.objectContaining({
-        version: '0.0.0',
-      }),
-      expect.anything(),
-    )
   })
 })
