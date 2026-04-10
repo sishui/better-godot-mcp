@@ -3,6 +3,11 @@
  */
 
 /**
+ * Pre-compiled regex for replacing backslashes with forward slashes in paths.
+ */
+export const BACKSLASH_RE = /\\/g
+
+/**
  * Fast-path parser for comma-separated lists, avoiding split/map/filter allocations.
  * Uses a single-pass loop to find delimiters, trimming whitespace and quotes in-place.
  */

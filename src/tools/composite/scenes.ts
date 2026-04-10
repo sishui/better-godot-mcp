@@ -9,6 +9,7 @@ import type { GodotConfig, SceneInfo, SceneNode } from '../../godot/types.js'
 import { formatJSON, formatSuccess, GodotMCPError, throwUnknownAction } from '../helpers/errors.js'
 import { pathExists, safeResolve } from '../helpers/paths.js'
 import { setSettingInContent } from '../helpers/project-settings.js'
+import { BACKSLASH_RE } from '../helpers/strings.js'
 
 // Pre-compiled regex for parsing scene metadata without splitting lines
 const rxNode = /^\[node\s+name="([^"]+)"\s+type="([^"]+)"(?:\s+parent="([^"]*)")?/
@@ -200,7 +201,7 @@ export async function handleScenes(action: string, args: Record<string, unknown>
       const prefixLen = resolvedPath.length + (resolvedPath.endsWith('/') || resolvedPath.endsWith('\\') ? 0 : 1)
       const relativePaths = new Array(scenes.length)
       for (let i = 0; i < scenes.length; i++) {
-        relativePaths[i] = scenes[i].substring(prefixLen).replace(/\\/g, '/')
+        relativePaths[i] = scenes[i].substring(prefixLen).replace(BACKSLASH_RE, '/')
       }
 
       return formatJSON({
@@ -264,7 +265,7 @@ export async function handleScenes(action: string, args: Record<string, unknown>
         throw new GodotMCPError('No project.godot found', 'PROJECT_NOT_FOUND', 'Verify the project path.')
       }
 
-      const resPath = `res://${scenePath.replace(/\\/g, '/')}`
+      const resPath = `res://${scenePath.replace(BACKSLASH_RE, '/')}`
       const content = await readFile(configPath, 'utf-8')
       const updated = setSettingInContent(content, 'application/run/main_scene', `"${resPath}"`)
       await writeFile(configPath, updated, 'utf-8')

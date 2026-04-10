@@ -9,6 +9,7 @@ import { dirname } from 'node:path'
 import type { GodotConfig } from '../../godot/types.js'
 import { formatJSON, formatSuccess, GodotMCPError, throwUnknownAction } from '../helpers/errors.js'
 import { safeResolve } from '../helpers/paths.js'
+import { BACKSLASH_RE } from '../helpers/strings.js'
 
 /**
  * Async helper to check file existence without blocking the event loop
@@ -75,7 +76,7 @@ export async function handleTilemap(action: string, args: Record<string, unknown
 
       // Performance optimization: using async file reading instead of sync
       let content = await readFile(fullPath, 'utf-8')
-      const resPath = `res://${texturePath.replace(/\\/g, '/')}`
+      const resPath = `res://${texturePath.replace(BACKSLASH_RE, '/')}`
 
       // Count existing sources to get next ID
       const sourceCount = (content.match(/\[ext_resource/g) || []).length

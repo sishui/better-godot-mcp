@@ -8,6 +8,7 @@ import { extname, join } from 'node:path'
 import type { GodotConfig } from '../../godot/types.js'
 import { formatJSON, formatSuccess, GodotMCPError, throwUnknownAction } from '../helpers/errors.js'
 import { pathExists, safeResolve } from '../helpers/paths.js'
+import { BACKSLASH_RE } from '../helpers/strings.js'
 
 const RESOURCE_EXTENSIONS = new Set([
   '.tres',
@@ -107,7 +108,7 @@ export async function handleResources(action: string, args: Record<string, unkno
       for (let i = 0; i < resources.length; i++) {
         const r = resources[i]
         relativePaths[i] = {
-          path: r.path.substring(prefixLen).replace(/\\/g, '/'),
+          path: r.path.substring(prefixLen).replace(BACKSLASH_RE, '/'),
           ext: extname(r.path),
           size: r.size,
         }

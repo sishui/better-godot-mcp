@@ -8,6 +8,7 @@ import { dirname, join } from 'node:path'
 import type { GodotConfig } from '../../godot/types.js'
 import { formatJSON, formatSuccess, GodotMCPError, throwUnknownAction } from '../helpers/errors.js'
 import { safeResolve } from '../helpers/paths.js'
+import { BACKSLASH_RE } from '../helpers/strings.js'
 
 const SHADER_TEMPLATES: Record<string, string> = {
   canvas_item: `shader_type canvas_item;
@@ -185,7 +186,7 @@ export async function handleShader(action: string, args: Record<string, unknown>
       const prefixLen = resolvedPath.length + (resolvedPath.endsWith('/') || resolvedPath.endsWith('\\') ? 0 : 1)
       const relativePaths = new Array(shaders.length)
       for (let i = 0; i < shaders.length; i++) {
-        relativePaths[i] = shaders[i].substring(prefixLen).replace(/\\/g, '/')
+        relativePaths[i] = shaders[i].substring(prefixLen).replace(BACKSLASH_RE, '/')
       }
 
       return formatJSON({ project: resolvedPath, count: relativePaths.length, shaders: relativePaths })
