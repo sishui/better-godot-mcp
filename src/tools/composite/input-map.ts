@@ -175,8 +175,23 @@ function parseInputActions(content: string): Map<string, string[]> {
   let currentActionName: string | null = null
   let currentActionAccumulator = ''
 
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim()
+  let pos = 0
+  const len = content.length
+
+  while (pos < len) {
+    const nextNewline = content.indexOf('\n', pos)
+    const lineEnd = nextNewline === -1 ? len : nextNewline
+
+    // Trim line manually (whitespace <= 32)
+    let start = pos
+    let end = lineEnd
+    while (start < end && content.charCodeAt(start) <= 32) start++
+    while (end > start && content.charCodeAt(end - 1) <= 32) end--
+
+    const trimmed = content.slice(start, end)
+    pos = nextNewline === -1 ? len : nextNewline + 1
+
+    if (trimmed === '') continue
 
     // Handle multi-line continuation
     if (currentActionName !== null) {
