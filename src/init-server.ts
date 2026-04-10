@@ -8,23 +8,38 @@
  * - EditorPlugin TCP support (Phase 2)
  */
 
+import { readFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
-import pkg from '../package.json' with { type: 'json' }
 import { detectGodot } from './godot/detector.js'
 import type { GodotConfig } from './godot/types.js'
 import { registerTools } from './tools/registry.js'
 
 const SERVER_NAME = 'better-godot-mcp'
 
-function getVersion(): string {
-  return pkg.version ?? '0.0.0'
+/**
+ * Get version from package.json
+ */
+async function getVersion(): Promise<string> {
+  try {
+    const __filename = fileURLToPath(import.meta.url)
+    const __dirname = dirname(__filename)
+    const pkgPath = join(__dirname, '..', 'package.json')
+    const content = await readFile(pkgPath, 'utf-8')
+    const pkg = JSON.parse(content)
+    return pkg.version ?? '0.0.0'
+  } catch {
+    return '0.0.0'
+  }
 }
 
 export async function initServer(): Promise<void> {
   try {
     // Detect Godot binary
     const detection = detectGodot()
+    const version = await getVersion()
 
     if (detection) {
       console.error(
@@ -49,7 +64,7 @@ export async function initServer(): Promise<void> {
     const server = new Server(
       {
         name: SERVER_NAME,
-        version: getVersion(),
+        version,
       },
       {
         capabilities: {
@@ -65,7 +80,7 @@ export async function initServer(): Promise<void> {
     const transport = new StdioServerTransport()
     await server.connect(transport)
 
-    console.error(`[${SERVER_NAME}] Server started (v${getVersion()})`)
+    console.error(`[${SERVER_NAME}] Server started (v${version})`)
   } catch (error) {
     console.error('Failed to initialize server:', error)
     throw error
