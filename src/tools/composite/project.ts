@@ -184,6 +184,22 @@ export async function handleProject(action: string, args: Record<string, unknown
         )
       }
 
+      if (preset.startsWith('-')) {
+        throw new GodotMCPError(
+          'Invalid preset name',
+          'INVALID_ARGS',
+          'Preset name cannot start with a hyphen to prevent argument injection.',
+        )
+      }
+
+      if (outputPath.startsWith('-')) {
+        throw new GodotMCPError(
+          'Invalid output path',
+          'INVALID_ARGS',
+          'Output path cannot start with a hyphen to prevent argument injection.',
+        )
+      }
+
       const resolvedProjectPath = safeResolve(config.projectPath || process.cwd(), projectPath)
       const result = await execGodotAsync(config.godotPath, [
         '--headless',
