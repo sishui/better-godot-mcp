@@ -323,18 +323,20 @@ export function renameNodeInContent(content: string, oldName: string, newName: s
     return content
   }
 
-  const escapedOldName = escapeRegExp(oldName)
+  // ⚡ Bolt: Replace 4 RegExp passes with native string replaceAll for exact matches
+  let result = content
+    .replaceAll(`name="${oldName}"`, `name="${newName}"`)
+    .replaceAll(`parent="${oldName}"`, `parent="${newName}"`)
+    .replaceAll(`from="${oldName}"`, `from="${newName}"`)
+    .replaceAll(`to="${oldName}"`, `to="${newName}"`)
 
-  // Replace in node declarations
-  let result = content.replace(new RegExp(`name="${escapedOldName}"`, 'g'), `name="${newName}"`)
-  // Replace in parent references
-  result = result.replace(new RegExp(`parent="${escapedOldName}"`, 'g'), `parent="${newName}"`)
-  // Replace in parent paths containing the old name
-  result = result.replace(new RegExp(`parent="([^"]*/)${escapedOldName}(/[^"]*)"`, 'g'), `parent="$1${newName}$2"`)
-  result = result.replace(new RegExp(`parent="([^"]*/)${escapedOldName}"`, 'g'), `parent="$1${newName}"`)
-  // Replace in connection references
-  result = result.replace(new RegExp(`from="${escapedOldName}"`, 'g'), `from="${newName}"`)
-  result = result.replace(new RegExp(`to="${escapedOldName}"`, 'g'), `to="${newName}"`)
+  // Only use RegExp for complex hierarchical parent paths
+  if (result.includes('parent="')) {
+    const escapedOldName = escapeRegExp(oldName)
+    result = result.replace(new RegExp(`parent="([^"]*/)${escapedOldName}(/[^"]*)"`, 'g'), `parent="$1${newName}$2"`)
+    result = result.replace(new RegExp(`parent="([^"]*/)${escapedOldName}"`, 'g'), `parent="$1${newName}"`)
+  }
+
   return result
 }
 
