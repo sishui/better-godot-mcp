@@ -47,10 +47,15 @@ vi.mock('node:fs', async (importOriginal) => {
   }
 })
 
-// Mock HTTP transport to avoid starting real server
-const mockStartHttp = vi.fn().mockResolvedValue(undefined)
-vi.mock('../src/transports/http.js', () => ({
-  startHttp: (...args: unknown[]) => mockStartHttp(...args),
+// Mock mcp-core runLocalServer to avoid starting real server.
+// init-server.ts dynamically imports '@n24q02m/mcp-core' only for HTTP mode.
+const mockStartHttp = vi.fn().mockResolvedValue({
+  host: '127.0.0.1',
+  port: 12345,
+  close: vi.fn().mockResolvedValue(undefined),
+})
+vi.mock('@n24q02m/mcp-core', () => ({
+  runLocalServer: (...args: unknown[]) => mockStartHttp(...args),
 }))
 
 // Mock stdio transport
@@ -66,7 +71,11 @@ describe('initServer', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     mockConnect.mockResolvedValue(undefined)
-    mockStartHttp.mockResolvedValue(undefined)
+    mockStartHttp.mockResolvedValue({
+      host: '127.0.0.1',
+      port: 12345,
+      close: vi.fn().mockResolvedValue(undefined),
+    })
     mockStartStdio.mockResolvedValue(undefined)
     // Suppress console.error output during tests
     vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -80,6 +89,19 @@ describe('initServer', () => {
     vi.restoreAllMocks()
   })
 
+  /**
+   * Helper: HTTP mode now blocks on SIGINT/SIGTERM via runLocalServer handle.
+   * Tests must trigger shutdown after initServer starts awaiting.
+   */
+  const runHttpInit = async (initServer: () => Promise<void>): Promise<void> => {
+    const done = initServer()
+    // Let the mocked runLocalServer resolve + the await chain run.
+    await new Promise((r) => setImmediate(r))
+    await new Promise((r) => setImmediate(r))
+    process.emit('SIGINT')
+    await done
+  }
+
   describe('transport mode selection', () => {
     it('should default to HTTP mode when no flags are set', async () => {
       const { detectGodot } = await import('../src/godot/detector.js')
@@ -87,7 +109,7 @@ describe('initServer', () => {
       delete process.env.MCP_TRANSPORT
 
       const { initServer } = await import('../src/init-server.js')
-      await initServer()
+      await runHttpInit(initServer)
 
       expect(mockStartHttp).toHaveBeenCalledOnce()
       expect(mockStartStdio).not.toHaveBeenCalled()
@@ -119,15 +141,18 @@ describe('initServer', () => {
       expect(mockStartHttp).not.toHaveBeenCalled()
     })
 
-    it('should pass server factory to startHttp in HTTP mode', async () => {
+    it('should pass server factory and options to runLocalServer in HTTP mode', async () => {
       const { detectGodot } = await import('../src/godot/detector.js')
       vi.mocked(detectGodot).mockReturnValue(null)
       delete process.env.MCP_TRANSPORT
 
       const { initServer } = await import('../src/init-server.js')
-      await initServer()
+      await runHttpInit(initServer)
 
-      expect(mockStartHttp).toHaveBeenCalledWith(expect.any(Function))
+      expect(mockStartHttp).toHaveBeenCalledWith(
+        expect.any(Function),
+        expect.objectContaining({ serverName: 'better-godot-mcp' }),
+      )
     })
 
     it('should pass server instance to startStdio in stdio mode', async () => {

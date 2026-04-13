@@ -84,9 +84,30 @@ export async function initServer(): Promise<void> {
       await startStdio(server)
       console.error(`[${SERVER_NAME}] Server started in stdio mode (v${getVersion()})`)
     } else {
-      const { startHttp } = await import('./transports/http.js')
-      await startHttp(() => createGodotServer())
-      console.error(`[${SERVER_NAME}] Server started in HTTP mode (v${getVersion()})`)
+      const { runLocalServer } = await import('@n24q02m/mcp-core')
+      const port = process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 0
+      const handle = await runLocalServer(
+        // Godot uses the lower-level Server; runLocalServer only calls `.connect(transport)`
+        // which both Server and McpServer expose with the same signature.
+        () => createGodotServer() as unknown as import('@modelcontextprotocol/sdk/server/mcp.js').McpServer,
+        {
+          serverName: SERVER_NAME,
+          port,
+          // No relaySchema -> no auth, no credential form (godot has no credentials).
+        },
+      )
+      console.error(
+        `[${SERVER_NAME}] Server started in HTTP mode (v${getVersion()}) on http://${handle.host}:${handle.port}/mcp`,
+      )
+      // Keep process alive until SIGINT/SIGTERM.
+      await new Promise<void>((resolve) => {
+        const shutdown = async (): Promise<void> => {
+          await handle.close()
+          resolve()
+        }
+        process.once('SIGINT', shutdown)
+        process.once('SIGTERM', shutdown)
+      })
     }
   } catch (error) {
     console.error('Failed to initialize server:', error)

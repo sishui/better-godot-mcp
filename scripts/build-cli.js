@@ -30,7 +30,12 @@ async function buildCli() {
     target: 'node24',
     format: 'esm',
     outfile: 'bin/cli.mjs',
-    external: ['@modelcontextprotocol/sdk'],
+    external: [
+      '@modelcontextprotocol/sdk',
+      // mcp-core has native deps (better-sqlite3) that cannot be bundled as ESM;
+      // keep it external so the user's node_modules resolves it normally.
+      '@n24q02m/mcp-core',
+    ],
     banner: {
       js: [
         '#!/usr/bin/env node',
