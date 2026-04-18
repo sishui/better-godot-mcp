@@ -40,3 +40,6 @@ docs/superpowers/
 coverage.xml
 htmlcov/
 .coverage
+
+# AI traces (public repo hygiene)
+.Jules/
