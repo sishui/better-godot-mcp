@@ -1,12 +1,19 @@
 import { execFileSync } from 'node:child_process'
 import type { PathLike } from 'node:fs'
-import { accessSync, existsSync, openSync, readdirSync, readSync, statSync } from 'node:fs'
+import { accessSync, existsSync, fstatSync, openSync, readdirSync, readSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 /**
  * Tests for Godot binary detector
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { detectGodot, isExecutable, isLikelyGodotBinary, isVersionSupported, parseGodotVersion, tryGetVersion } from '../../src/godot/detector.js'
+import {
+  detectGodot,
+  isExecutable,
+  isLikelyGodotBinary,
+  isVersionSupported,
+  parseGodotVersion,
+  tryGetVersion,
+} from '../../src/godot/detector.js'
 
 vi.mock('node:child_process')
 vi.mock('node:fs')
@@ -167,7 +174,9 @@ describe('detector', () => {
   // ==========================================
   describe('isLikelyGodotBinary', () => {
     it('should return true when signature is in first chunk', () => {
-      vi.mocked(statSync).mockReturnValue({ isFile: () => true, size: 50 * 1024 * 1024 } as unknown as import('node:fs').Stats)
+      const mockStats = { isFile: () => true, size: 50 * 1024 * 1024 } as unknown as import('node:fs').Stats
+      vi.mocked(statSync).mockReturnValue(mockStats)
+      vi.mocked(fstatSync).mockReturnValue(mockStats)
       vi.mocked(openSync).mockReturnValue(999)
       vi.mocked(readSync).mockImplementation((_fd, buffer) => {
         const b = buffer as Buffer
@@ -178,7 +187,9 @@ describe('detector', () => {
     })
 
     it('should return true when GDScript signature is found', () => {
-      vi.mocked(statSync).mockReturnValue({ isFile: () => true, size: 50 * 1024 * 1024 } as unknown as import('node:fs').Stats)
+      const mockStats = { isFile: () => true, size: 50 * 1024 * 1024 } as unknown as import('node:fs').Stats
+      vi.mocked(statSync).mockReturnValue(mockStats)
+      vi.mocked(fstatSync).mockReturnValue(mockStats)
       vi.mocked(openSync).mockReturnValue(999)
       vi.mocked(readSync).mockImplementation((_fd, buffer) => {
         const b = buffer as Buffer
@@ -191,7 +202,9 @@ describe('detector', () => {
     it('should scan multiple chunks for large binaries where signature is not in first chunk', () => {
       const largeSize = 139 * 1024 * 1024
       let callCount = 0
-      vi.mocked(statSync).mockReturnValue({ isFile: () => true, size: largeSize } as unknown as import('node:fs').Stats)
+      const mockStats = { isFile: () => true, size: largeSize } as unknown as import('node:fs').Stats
+      vi.mocked(statSync).mockReturnValue(mockStats)
+      vi.mocked(fstatSync).mockReturnValue(mockStats)
       vi.mocked(openSync).mockReturnValue(999)
       vi.mocked(readSync).mockImplementation((_fd, buffer, _bufferOffset, _length, filePosition) => {
         callCount++
@@ -208,7 +221,9 @@ describe('detector', () => {
     })
 
     it('should return false when no signature is found', () => {
-      vi.mocked(statSync).mockReturnValue({ isFile: () => true, size: 50 * 1024 * 1024 } as unknown as import('node:fs').Stats)
+      const mockStats = { isFile: () => true, size: 50 * 1024 * 1024 } as unknown as import('node:fs').Stats
+      vi.mocked(statSync).mockReturnValue(mockStats)
+      vi.mocked(fstatSync).mockReturnValue(mockStats)
       vi.mocked(openSync).mockReturnValue(999)
       vi.mocked(readSync).mockImplementation((_fd, buffer) => {
         const b = buffer as Buffer
@@ -219,7 +234,9 @@ describe('detector', () => {
     })
 
     it('should handle small files under 4MB', () => {
-      vi.mocked(statSync).mockReturnValue({ isFile: () => true, size: 1024 * 1024 } as unknown as import('node:fs').Stats)
+      const mockStats = { isFile: () => true, size: 1024 * 1024 } as unknown as import('node:fs').Stats
+      vi.mocked(statSync).mockReturnValue(mockStats)
+      vi.mocked(fstatSync).mockReturnValue(mockStats)
       vi.mocked(openSync).mockReturnValue(999)
       vi.mocked(readSync).mockImplementation((_fd, buffer) => {
         const b = buffer as Buffer
@@ -230,7 +247,9 @@ describe('detector', () => {
     })
 
     it('should return false on read error', () => {
-      vi.mocked(statSync).mockReturnValue({ isFile: () => true, size: 50 * 1024 * 1024 } as unknown as import('node:fs').Stats)
+      const mockStats = { isFile: () => true, size: 50 * 1024 * 1024 } as unknown as import('node:fs').Stats
+      vi.mocked(statSync).mockReturnValue(mockStats)
+      vi.mocked(fstatSync).mockReturnValue(mockStats)
       vi.mocked(openSync).mockImplementation(() => {
         throw new Error('ENOENT')
       })
@@ -238,7 +257,9 @@ describe('detector', () => {
     })
 
     it('should find signature via head fast path', () => {
-      vi.mocked(statSync).mockReturnValue({ isFile: () => true, size: 50 * 1024 * 1024 } as unknown as import('node:fs').Stats)
+      const mockStats = { isFile: () => true, size: 50 * 1024 * 1024 } as unknown as import('node:fs').Stats
+      vi.mocked(statSync).mockReturnValue(mockStats)
+      vi.mocked(fstatSync).mockReturnValue(mockStats)
       vi.mocked(openSync).mockReturnValue(999)
       let readCalls = 0
       vi.mocked(readSync).mockImplementation((_fd, buffer, _bufOff, _len, pos) => {
@@ -256,11 +277,11 @@ describe('detector', () => {
     })
 
     it('should find signature via tail fast path', () => {
-      vi.mocked(statSync).mockReturnValue({ isFile: () => true, size: 100 * 1024 * 1024 } as unknown as import('node:fs').Stats)
+      const mockStats = { isFile: () => true, size: 100 * 1024 * 1024 } as unknown as import('node:fs').Stats
+      vi.mocked(statSync).mockReturnValue(mockStats)
+      vi.mocked(fstatSync).mockReturnValue(mockStats)
       vi.mocked(openSync).mockReturnValue(999)
-      let readCalls = 0
       vi.mocked(readSync).mockImplementation((_fd, buffer, _bufOff, _len, pos) => {
-        readCalls++
         const b = buffer as Buffer
         const p = typeof pos === 'number' ? pos : 0
         if (p > 90 * 1024 * 1024) {
@@ -280,7 +301,9 @@ describe('detector', () => {
       const step = chunkSize - overlap
       const fileSize = step * 2 + 100
       let callCount = 0
-      vi.mocked(statSync).mockReturnValue({ isFile: () => true, size: fileSize } as unknown as import('node:fs').Stats)
+      const mockStats = { isFile: () => true, size: fileSize } as unknown as import('node:fs').Stats
+      vi.mocked(statSync).mockReturnValue(mockStats)
+      vi.mocked(fstatSync).mockReturnValue(mockStats)
       vi.mocked(openSync).mockReturnValue(999)
       vi.mocked(readSync).mockImplementation((_fd, buffer, _bufferOffset, _length, filePosition) => {
         callCount++
@@ -318,7 +341,12 @@ describe('detector', () => {
     })
 
     it('should require signature check when skipSignatureCheck is false', () => {
-      vi.mocked(statSync).mockReturnValue({ isFile: () => true, size: 50 * 1024 * 1024 } as unknown as import('node:fs').Stats)
+      const mockStats = {
+        isFile: () => true,
+        size: 50 * 1024 * 1024,
+      } as unknown as import('node:fs').Stats
+      vi.mocked(statSync).mockReturnValue(mockStats)
+      vi.mocked(fstatSync).mockReturnValue(mockStats)
       vi.mocked(openSync).mockReturnValue(999)
       vi.mocked(readSync).mockImplementation((_fd, buffer) => {
         const b = buffer as Buffer
@@ -376,6 +404,8 @@ describe('detector', () => {
   // ==========================================
   describe('isLikelyGodotBinary', () => {
     it('should return true if file contains "Godot Engine"', () => {
+      const mockStats = { isFile: () => true, size: 50 * 1024 * 1024 } as unknown as import('node:fs').Stats
+      vi.mocked(fstatSync).mockReturnValue(mockStats)
       vi.mocked(openSync).mockReturnValue(123)
       vi.mocked(readSync).mockImplementation((_fd, buffer) => {
         const b = buffer as Buffer
@@ -386,6 +416,8 @@ describe('detector', () => {
     })
 
     it('should return true if file contains "GDScript"', () => {
+      const mockStats = { isFile: () => true, size: 50 * 1024 * 1024 } as unknown as import('node:fs').Stats
+      vi.mocked(fstatSync).mockReturnValue(mockStats)
       vi.mocked(openSync).mockReturnValue(123)
       vi.mocked(readSync).mockImplementation((_fd, buffer) => {
         const b = buffer as Buffer
@@ -396,6 +428,8 @@ describe('detector', () => {
     })
 
     it('should return false if file contains neither signature', () => {
+      const mockStats = { isFile: () => true, size: 50 * 1024 * 1024 } as unknown as import('node:fs').Stats
+      vi.mocked(fstatSync).mockReturnValue(mockStats)
       vi.mocked(openSync).mockReturnValue(123)
       vi.mocked(readSync).mockImplementation((_fd, buffer) => {
         const b = buffer as Buffer
@@ -418,6 +452,8 @@ describe('detector', () => {
   // ==========================================
   describe('tryGetVersion', () => {
     it('should return null if isLikelyGodotBinary returns false', () => {
+      const mockStats = { isFile: () => true, size: 50 * 1024 * 1024 } as unknown as import('node:fs').Stats
+      vi.mocked(fstatSync).mockReturnValue(mockStats)
       vi.mocked(openSync).mockReturnValue(123)
       vi.mocked(readSync).mockImplementation((_fd, buffer) => {
         const b = buffer as Buffer
@@ -429,6 +465,8 @@ describe('detector', () => {
 
     it('should return version if execFileSync succeeds', () => {
       // Mock isLikelyGodotBinary to pass
+      const mockStats = { isFile: () => true, size: 50 * 1024 * 1024 } as unknown as import('node:fs').Stats
+      vi.mocked(fstatSync).mockReturnValue(mockStats)
       vi.mocked(openSync).mockReturnValue(123)
       vi.mocked(readSync).mockImplementation((_fd, buffer) => {
         const b = buffer as Buffer
@@ -446,6 +484,8 @@ describe('detector', () => {
 
     it('should return null if execFileSync throws', () => {
       // Mock isLikelyGodotBinary to pass
+      const mockStats = { isFile: () => true, size: 50 * 1024 * 1024 } as unknown as import('node:fs').Stats
+      vi.mocked(fstatSync).mockReturnValue(mockStats)
       vi.mocked(openSync).mockReturnValue(123)
       vi.mocked(readSync).mockImplementation((_fd, buffer) => {
         const b = buffer as Buffer
@@ -467,8 +507,13 @@ describe('detector', () => {
     beforeEach(() => {
       vi.clearAllMocks()
       process.env = { ...originalEnv }
-      // Default: statSync returns a file, accessSync succeeds (isExecutable passes)
-      vi.mocked(statSync).mockReturnValue({ isFile: () => true, size: 50 * 1024 * 1024 } as unknown as import('node:fs').Stats)
+      // Default: statSync/fstatSync returns a file, accessSync succeeds (isExecutable passes)
+      const mockStats = {
+        isFile: () => true,
+        size: 50 * 1024 * 1024,
+      } as unknown as import('node:fs').Stats
+      vi.mocked(statSync).mockReturnValue(mockStats)
+      vi.mocked(fstatSync).mockReturnValue(mockStats)
       vi.mocked(accessSync).mockReturnValue(undefined)
       vi.mocked(openSync).mockReturnValue(999)
       vi.mocked(readSync).mockImplementation((_fd, buffer) => {
